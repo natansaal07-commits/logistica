@@ -1,0 +1,15 @@
+{
+  "name": "Ruta · Logística",
+  "short_name": "Ruta",
+  "description": "Rutas, repartidores y seguimiento en vivo.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#06080D",
+  "theme_color": "#06080D",
+  "lang": "es-AR",
+  "icons": [
+    { "src": "icono.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
