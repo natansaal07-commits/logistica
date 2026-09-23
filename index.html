@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Ruta">
 <meta name="robots" content="noindex,nofollow">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://tiles.openfreemap.org; worker-src blob:; child-src blob:; connect-src 'self' https://hgwnclqscytyozqkccro.supabase.co wss://hgwnclqscytyozqkccro.supabase.co https://cdn.jsdelivr.net https://tiles.openfreemap.org https://dolarapi.com https://api.bluelytics.com.ar https://photon.komoot.io https://router.project-osrm.org; base-uri 'none'; form-action 'self'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://tiles.openfreemap.org; worker-src blob:; child-src blob:; connect-src 'self' https://hgwnclqscytyozqkccro.supabase.co wss://hgwnclqscytyozqkccro.supabase.co https://cdn.jsdelivr.net https://tiles.openfreemap.org https://dolarapi.com https://api.bluelytics.com.ar https://photon.komoot.io https://router.project-osrm.org https://servicios.usig.buenosaires.gob.ar https://apis.datos.gob.ar; base-uri 'none'; form-action 'self'; object-src 'none'">
 <meta name="description" content="Logística de traslados: rutas, repartidores y seguimiento en vivo.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icono.svg" type="image/svg+xml">
@@ -606,6 +606,137 @@ select.inp{appearance:none;padding-right:34px;background-image:url("data:image/s
   .toasts{left:12px;right:12px;bottom:calc(76px + env(safe-area-inset-bottom));align-items:stretch}
 }
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
+
+/* ---------- dirección: estado de búsqueda ---------- */
+.estado-dir{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin-top:7px;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.estado-dir:empty{display:none}
+.estado-dir>svg{flex:none}
+.estado-dir span{flex:1 1 220px}
+.estado-dir.ok{color:var(--ok)} .estado-dir.err{color:var(--bad)}
+.estado-dir .btn{color:var(--ink);flex:none}
+.giro{flex:0 0 13px!important;width:13px;height:13px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:gira .7s linear infinite}
+
+/* ---------- selector de rol ---------- */
+.roles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.rol-op{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:9px;padding:12px;border-radius:14px;background:var(--surface);border:1px solid var(--line-2);text-align:left;color:var(--ink);transition:border-color .15s,background .2s,box-shadow .2s;min-width:0}
+.rol-op:hover:not(:disabled){border-color:var(--muted)}
+.rol-op.sel{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 3px color-mix(in oklab,var(--accent) 18%,transparent)}
+.rol-op:disabled{opacity:.45;cursor:not-allowed}
+.rol-ic{flex:none;width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:var(--surface-3);color:var(--ink-2);transition:background .2s,color .2s}
+.rol-op.sel .rol-ic{background:var(--accent);color:#fff}
+.rol-tx{min-width:0;display:flex;flex-direction:column;gap:2px}
+.rol-tx b{font-size:13.5px;font-weight:620}
+.rol-tx small{display:none;font-size:12px;color:var(--muted)}
+.rol-ok{position:absolute;top:10px;right:10px;color:var(--accent-2);opacity:0;transform:scale(.6);transition:opacity .15s,transform .2s var(--ease)}
+.rol-op.sel .rol-ok{opacity:1;transform:none}
+:root[data-theme="light"] .rol-ok{color:var(--accent)}
+@media(max-width:640px){.roles{grid-template-columns:1fr}.rol-op{flex-direction:row;align-items:center;gap:12px}.rol-tx small{display:block}}
+
+/* ---------- planillas (admin) ---------- */
+.pl-ic{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:#1f9d57;background:color-mix(in oklab,#1f9d57 16%,transparent)}
+.pl-ic.sm{width:36px;height:36px;border-radius:11px}
+.pl-card{display:block;width:100%;padding:16px;border-radius:var(--r-lg);background:var(--panel);border:1px solid var(--line);cursor:pointer;transition:border-color .15s,transform .2s var(--ease),box-shadow .2s;color:var(--ink)}
+.pl-card:hover{border-color:var(--line-2);transform:translateY(-2px);box-shadow:var(--sh-2)}
+.pl-card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.pl-card-t{display:flex;align-items:center;gap:12px}
+.pl-card-t b{display:block;font-size:15px;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pl-card-t small{display:block;margin-top:3px;font-size:12.5px;color:var(--muted)}
+.pl-desc{margin:12px 0 0;font-size:13px;color:var(--ink-2);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pl-pie{display:flex;align-items:center;gap:12px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);min-width:0}
+.pl-pie span{display:inline-flex;align-items:center;gap:5px;min-width:0}
+.pl-pie .mono{font-family:var(--mono);font-size:11.5px;margin-left:auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pl-quien{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:-4px 0 18px;font-size:13px;color:var(--muted)}
+.pl-quien>span:first-child{display:inline-flex;align-items:center;gap:6px}
+.pl-persona{display:inline-flex;align-items:center;gap:7px;padding:4px 10px 4px 4px;border-radius:20px;background:var(--surface);border:1px solid var(--line);color:var(--ink);font-weight:550}
+.pl-persona.off{opacity:.5;text-decoration:line-through}
+.zona-subir{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;padding:56px 24px;border-radius:22px;border:1.5px dashed var(--line-2);background:linear-gradient(180deg,color-mix(in oklab,var(--accent) 6%,transparent),transparent);color:var(--muted);text-align:center;cursor:pointer;transition:border-color .2s,background .2s}
+.zona-subir:hover{border-color:var(--accent)}
+.zona-subir b{color:var(--ink);font-size:16px}
+.zona-subir span{max-width:440px;font-size:13px;line-height:1.5}
+.zs-ic{width:64px;height:64px;border-radius:20px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-2);margin-bottom:4px}
+.soltar{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:color-mix(in oklab,var(--bg) 70%,transparent);backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .15s}
+.soltar.activo{opacity:1}
+.soltar>div{display:flex;flex-direction:column;align-items:center;gap:12px;padding:40px 56px;border-radius:24px;border:2px dashed var(--accent);background:var(--panel);color:var(--accent-2)}
+.soltar b{color:var(--ink);font-size:17px}
+.menu{display:flex;flex-direction:column;gap:2px;padding:0}
+.popover:has(.menu){padding:6px;width:260px}
+.menu button{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;font-size:13.5px;color:var(--ink);text-align:left}
+.menu button:hover{background:var(--surface-2)}
+.menu button.peligro{color:var(--bad)}
+.leyendo{display:flex;align-items:center;justify-content:center;gap:10px;font-size:15px}
+.modal.modal-ancho{width:min(980px,94vw);max-width:none}
+.previa-h{display:flex;align-items:center;gap:12px}
+.previa-h h3{margin:0}.previa-h p{margin:3px 0 0}
+.previa-visor{margin-top:14px;border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.previa-visor .visor-cuerpo{max-height:340px;overflow:auto}
+.drawer.drawer-ancho{width:min(1180px,96vw)}
+.pl-meta p{margin:0 0 10px;color:var(--ink-2);font-size:13.5px;line-height:1.5}
+.pl-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+
+/* ---------- visor de planilla (solo lectura) ---------- */
+.visor{display:flex;flex-direction:column;min-width:0}
+.visor-barra{display:flex;flex-direction:column;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--panel)}
+.visor-tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.visor-tab{flex:none;height:30px;padding:0 12px;border-radius:9px;font-size:12.5px;font-weight:600;color:var(--muted);background:var(--surface);border:1px solid var(--line)}
+.visor-tab[aria-pressed="true"]{color:#fff;background:#1f9d57;border-color:#1f9d57}
+.visor-herr{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.visor-busca{flex:1 1 220px;min-width:0}
+.visor-cont{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.visor-cuerpo{min-width:0}
+.tabla-scroll{overflow:auto;max-height:calc(100dvh - 260px);min-height:200px;background:var(--bg-2)}
+.tabla-scroll:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.tabla-pl{border-collapse:separate;border-spacing:0;font-size:13px;min-width:100%}
+.tabla-pl th,.tabla-pl td{padding:8px 12px;border-bottom:1px solid var(--line);border-right:1px solid color-mix(in oklab,var(--line) 60%,transparent);white-space:nowrap;max-width:420px;overflow:hidden;text-overflow:ellipsis;text-align:left}
+.tabla-pl thead th{position:sticky;top:0;z-index:2;background:var(--surface-2);font-size:12px;font-weight:650;color:var(--ink);letter-spacing:.01em}
+.tabla-pl tbody tr:nth-child(even) td{background:color-mix(in oklab,var(--surface) 55%,transparent)}
+.tabla-pl tbody tr:hover td{background:var(--accent-soft)}
+.tabla-pl .num{text-align:right;font-family:var(--mono);font-size:12.5px;font-variant-numeric:tabular-nums}
+.tabla-pl th.num{font-family:var(--font);font-size:12px}
+.tabla-pl .n{position:sticky;left:0;z-index:1;width:1%;text-align:right;color:var(--faint);font-family:var(--mono);font-size:11.5px;background:var(--surface-2)!important;border-right:1px solid var(--line)}
+.tabla-pl thead .n{z-index:3}
+.tabla-pl mark,.fichas mark{background:color-mix(in oklab,#f5c518 45%,transparent);color:inherit;border-radius:3px;padding:0 1px}
+.fichas{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;padding:12px;background:var(--bg-2)}
+.ficha{padding:14px;border-radius:16px;background:var(--panel);border:1px solid var(--line)}
+.ficha-t{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px}
+.ficha-t b{font-size:14.5px;min-width:0;overflow-wrap:anywhere}
+.ficha-t span{flex:none;font-size:11px;color:var(--faint);font-family:var(--mono)}
+.ficha dl{margin:0;display:flex;flex-direction:column;gap:6px}
+.ficha dl>div{display:flex;justify-content:space-between;gap:14px;padding-top:6px;border-top:1px dashed var(--line)}
+.ficha dt{font-size:12px;color:var(--muted);flex:none;max-width:45%}
+.ficha dd{margin:0;font-size:13px;text-align:right;overflow-wrap:anywhere}
+.ficha dd.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.visor-fin{height:1px}
+
+/* ---------- app de consulta ---------- */
+.cs{min-height:100dvh;background:var(--bg)}
+.cs-top{max-width:1400px;margin:0 auto}
+.cs-top .pill{margin-top:3px}
+.cs-cuerpo{display:grid;grid-template-columns:340px minmax(0,1fr);gap:18px;max-width:1400px;margin:0 auto;padding:8px 18px 40px;align-items:start}
+.cs-cab h2{margin:6px 0 4px;font-size:22px;letter-spacing:-.02em}
+.cs-cab p{margin:0 0 16px;color:var(--muted);font-size:13.5px}
+.cs-items{display:flex;flex-direction:column;gap:10px}
+.cs-item.sel{border-color:#1f9d57;box-shadow:0 0 0 3px color-mix(in oklab,#1f9d57 20%,transparent)}
+.cs-ver{min-width:0;border-radius:20px;background:var(--panel);border:1px solid var(--line);overflow:hidden;position:sticky;top:78px}
+.cs-ver-h{display:flex;align-items:center;gap:10px;padding:16px 16px 6px}
+.cs-ver-h h2{margin:0;font-size:19px;letter-spacing:-.015em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cs-ver-h small{color:var(--muted);font-size:12.5px}
+.cs-desc{margin:0;padding:4px 16px 12px;color:var(--ink-2);font-size:13.5px;line-height:1.5}
+.cs-volver{display:none}
+.cs-vacio-ver{min-height:420px;justify-content:center}
+.cs-ver{display:flex;flex-direction:column;max-height:calc(100dvh - 96px)}
+.cs-ver>.visor{flex:1;min-height:0}
+.cs-ver .visor-cuerpo{flex:1;min-height:0;display:flex;flex-direction:column}
+.cs-ver .tabla-scroll{flex:1;max-height:none}
+.cs-ver .fichas{flex:1;overflow:auto}
+@media(max-width:899px){
+  .cs-cuerpo{grid-template-columns:1fr;padding:4px 14px 40px}
+  .cs-ver{display:none;position:static;border-radius:18px;max-height:none}
+  .cs-ver .fichas{overflow:visible}
+  .cs-cuerpo.viendo .cs-lista{display:none}
+  .cs-cuerpo.viendo .cs-ver{display:block}
+  .cs-volver{display:inline-flex}
+  .cs .tabla-scroll{max-height:calc(100dvh - 230px)}
+}
 </style>
 </head>
 <body>
@@ -1105,6 +1236,10 @@ var UI = (function () {
     moto: '<circle cx="5.5" cy="17" r="3"/><circle cx="18.5" cy="17" r="3"/><path d="M8.5 17h6l3-7h-4l-2 4H7M14 6h3l1.5 4"/>',
     ajustes: '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
     mas: '<path d="M12 5v14M5 12h14"/>',
+    puntos: '<circle cx="5.5" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="18.5" cy="12" r="1.3" fill="currentColor"/>',
+    tabla: '<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M3 15h18M9.5 4v16"/>',
+    subir: '<path d="M12 15.5V4M7 8.5 12 4l5 4.5"/><path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15"/>',
+    fichas: '<rect x="3.5" y="4" width="17" height="7" rx="2"/><rect x="3.5" y="13" width="17" height="7" rx="2"/><path d="M7 7.5h6M7 16.5h6"/>',
     x: '<path d="M6 6l12 12M18 6 6 18"/>',
     buscar: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
     izq: '<path d="m15 18-6-6 6-6"/>', der: '<path d="m9 18 6-6-6-6"/>', abajo: '<path d="m6 9 6 6 6-6"/>',
@@ -1286,6 +1421,230 @@ var UI = (function () {
 
 ;
 /* =====================================================================
+   GEO — búsqueda de direcciones con varias fuentes y corrección de calles.
+   Todas gratis y sin clave. A terceros sale SOLO el texto de la dirección
+   o un par de coordenadas; nunca cliente, montos ni monedas.
+     1) USIG (Gobierno de la Ciudad): CABA y conurbano, calle+altura y esquinas.
+        Si no entiende el nombre ("Rio bamba", "Cabilso"), se corrige contra el
+        callejero oficial de la Ciudad y se vuelve a intentar.
+     2) Photon (OpenStreetMap): lugares, comercios y texto libre.
+     3) Georef (Gobierno Nacional): respaldo si USIG no responde.
+   ===================================================================== */
+var Geo = (function () {
+  "use strict";
+  var USIG = "https://servicios.usig.buenosaires.gob.ar";
+  var AMBA = { lat: -34.6037, lng: -58.3816 };
+  var CAJA = { o: -59.6, s: -35.3, e: -57.6, n: -34.1 };
+  var TIPOS = { AV: 1, AVENIDA: 1, AVD: 1, AVDA: 1, CALLE: 1, PJE: 1, PASAJE: 1, BV: 1, BOULEVARD: 1, BLVD: 1 };
+  var espera = { usig: 7000, photon: 7000, georef: 7000, calles: 10000 };
+
+  /* ---------- utilidades ---------- */
+  function sinTildes(s) { return String(s == null ? "" : s).normalize("NFD").replace(/[̀-ͯ]/g, ""); }
+  function tokens(s) { return sinTildes(s).toUpperCase().replace(/[^A-Z0-9]+/g, " ").trim().split(" ").filter(Boolean); }
+  function nucleo(ts) { return ts.filter(function (t) { return !TIPOS[t]; }); }
+  function lev(a, b) {
+    if (a === b) { return 0; }
+    var m = a.length, n = b.length; if (!m) { return n; } if (!n) { return m; }
+    var prev = new Array(n + 1), cur = new Array(n + 1), i, j;
+    for (j = 0; j <= n; j++) { prev[j] = j; }
+    for (i = 1; i <= m; i++) {
+      cur[0] = i;
+      for (j = 1; j <= n; j++) { cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a.charCodeAt(i - 1) === b.charCodeAt(j - 1) ? 0 : 1)); }
+      var t = prev; prev = cur; cur = t;
+    }
+    return prev[n];
+  }
+  function distM(a, b) {
+    var R = 6371000, r = Math.PI / 180, dLat = (b.lat - a.lat) * r, dLng = (b.lng - a.lng) * r;
+    var x = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return 2 * R * Math.asin(Math.sqrt(x));
+  }
+  function enAmba(lat, lng) { return lat >= CAJA.s && lat <= CAJA.n && lng >= CAJA.o && lng <= CAJA.e; }
+  async function pedir(url, ms, como) {
+    var ctl = new AbortController(), t = setTimeout(function () { ctl.abort(); }, ms);
+    try { var r = await fetch(url, { signal: ctl.signal }); if (!r.ok) { throw new Error("HTTP " + r.status); } return como === "buf" ? await r.arrayBuffer() : await r.json(); }
+    finally { clearTimeout(t); }
+  }
+
+  /* ---------- nombres lindos: "CORRIENTES AV." -> "Av. Corrientes" ---------- */
+  function capital(s) {
+    return s.toLowerCase().replace(/(^|[\s(.\-/])([a-zà-ÿ])/g, function (m, a, b) { return a + b.toUpperCase(); })
+      .replace(/\s(De|Del|La|Las|Los|Y|E|El)(?=\s)/g, function (w) { return w.toLowerCase(); });
+  }
+  function lindo(n) {
+    n = String(n || "").trim(); if (!n || /[a-z]/.test(n)) { return n; }
+    var av = /\sAV\.?$/.test(n); n = n.replace(/\s+AV\.?$/, "");
+    var ps = n.split(/\s*,\s*/).filter(Boolean);
+    if (ps.length === 2) { n = ps[1] + " " + ps[0]; }
+    else if (ps.length > 2) { n = ps[1] + " " + ps[0] + " (" + ps.slice(2).join(" ") + ")"; }
+    n = capital(n);
+    if (!av) { return n; }
+    return "Av. " + n.replace(/^(De|Del)\s/, function (w) { return w.toLowerCase(); });
+  }
+
+  /* ---------- lo que escribe la persona ---------- */
+  function limpiar(q) {
+    var s = String(q || "").replace(/\s+/g, " ").trim(), resto = "";
+    var coma = s.indexOf(","); if (coma >= 0) { resto = s.slice(coma + 1).trim(); s = s.slice(0, coma); }
+    s = s.replace(/\s+(?:piso|p\.|pb|p\.b\.|dpto\.?|depto\.?|dto\.?|departamento|of\.?|oficina|local|timbre|torre|unidad|uf)(?:\s.*|\d.*)?$/i, "");
+    s = s.replace(/\b(?:n[°º]|nro\.?|numero|número)\s*(?=\d)/ig, "").replace(/\s+al\s+(?=\d)/ig, " ");
+    return { texto: s.replace(/\s+/g, " ").trim(), resto: resto };
+  }
+  function partes(s) {
+    var m = s.split(/\s+(?:y|esq\.?|esquina)\s+|\s*&\s*/i);
+    if (m.length === 2 && m[0].trim() && m[1].trim()) { return { tipo: "cruce", a: m[0].trim(), b: m[1].trim() }; }
+    var n = s.match(/^(.*\D)\s+(\d{1,5})$/);
+    if (n) { return { tipo: "altura", a: n[1].trim(), altura: n[2] }; }
+    return { tipo: "calle", a: s.trim() };
+  }
+
+  /* ---------- callejero oficial de la Ciudad (se guarda 30 días) ---------- */
+  var CALLES = null, cargando = null, CLAVE = "ruta-callejero-v1";
+  function indexar(lista) {
+    var vistos = {};
+    return lista.filter(function (e) { if (!e || !e[0] || vistos[e[0]]) { return false; } vistos[e[0]] = 1; return true; }).map(function (e) {
+      var nuc = nucleo(tokens(e[0])); return { nombre: e[0], nuc: nuc, junto: nuc.join(""), bus: tokens(e[1] || e[0]) };
+    });
+  }
+  function calles() {
+    if (CALLES) { return Promise.resolve(CALLES); }
+    if (cargando) { return cargando; }
+    try {
+      var c = JSON.parse(localStorage.getItem(CLAVE) || "null");
+      if (c && c.d && c.d.length > 300 && Date.now() - c.t < 30 * 864e5) { CALLES = indexar(c.d); return Promise.resolve(CALLES); }
+    } catch (e) {}
+    cargando = pedir(USIG + "/callejero", espera.calles, "buf").then(function (buf) {
+      var txt; try { txt = new TextDecoder("utf-8", { fatal: true }).decode(buf); } catch (e) { txt = new TextDecoder("windows-1252").decode(buf); }
+      var d = JSON.parse(txt).map(function (e) { return [e[1], e[2]]; });
+      try { localStorage.setItem(CLAVE, JSON.stringify({ t: Date.now(), d: d })); } catch (e) {}
+      CALLES = indexar(d); return CALLES;
+    }).catch(function (e) { cargando = null; throw e; });
+    return cargando;
+  }
+  function parecido(t, w) {
+    if (w === t) { return 1; }
+    if (t.length >= 4 && w.indexOf(t) === 0) { return 0.85; }
+    if (t.length >= 5 && w.length >= 4 && lev(t, w) <= 1) { return 0.8; }
+    return 0;
+  }
+  function corregir(texto, lista) {
+    var q = nucleo(tokens(texto)); if (!q.length) { return null; }
+    var qj = q.join(""), mejor = null, ms = 0;
+    for (var i = 0; i < lista.length; i++) {
+      var c = lista[i]; if (!c.junto) { continue; }
+      var s = 0;
+      if (c.junto === qj) { s = 1; }
+      else {
+        var suma = 0, todas = true;
+        for (var k = 0; k < q.length; k++) {
+          var mx = 0; for (var w = 0; w < c.bus.length; w++) { var p = parecido(q[k], c.bus[w]); if (p > mx) { mx = p; } }
+          if (!mx) { todas = false; break; } suma += mx;
+        }
+        if (todas) { s = 0.92 * (suma / q.length) - 0.02 * Math.max(0, c.nuc.length - q.length); }
+        var L = Math.max(qj.length, c.junto.length);
+        if (L >= 4) { var r = 1 - lev(qj, c.junto) / L; if (r > s) { s = r; } }
+      }
+      if (s > ms) { ms = s; mejor = c; }
+    }
+    return ms >= 0.78 ? { nombre: mejor.nombre, puntaje: Math.round(ms * 100) / 100 } : null;
+  }
+
+  /* ---------- fuentes ---------- */
+  function desdeUsig(d) {
+    var caba = d.cod_partido === "caba";
+    var calle = lindo(d.nombre_calle), cruce = d.nombre_calle_cruce ? lindo(d.nombre_calle_cruce) : "";
+    var titulo = d.tipo === "calle_y_calle" && cruce ? calle + " y " + cruce : calle + (d.altura ? " " + d.altura : "");
+    var zona = caba ? "CABA" : [d.nombre_localidad, d.nombre_partido].filter(function (z, i, a) { return z && a.indexOf(z) === i; }).join(", ");
+    return { titulo: titulo, sub: caba ? "Ciudad de Buenos Aires" : zona, direccion: titulo + (zona ? ", " + zona : ""),
+      lat: parseFloat(d.coordenadas.y), lng: parseFloat(d.coordenadas.x), fuente: "usig", caba: caba };
+  }
+  async function usig(texto) {
+    var j = await pedir(USIG + "/normalizar/?geocodificar=true&maxOptions=6&direccion=" + encodeURIComponent(texto), espera.usig);
+    return (j.direccionesNormalizadas || []).filter(function (d) { return d.coordenadas && d.coordenadas.x != null && d.coordenadas.y != null; }).map(desdeUsig)
+      .filter(function (x) { return isFinite(x.lat) && isFinite(x.lng); });
+  }
+  function sinComas(n) { return String(n).replace(/\s*,\s*/g, " "); }
+  async function usigCorrigiendo(texto) {
+    var r = await usig(texto);
+    if (r.length) { return r; }
+    var p = partes(texto), lista;
+    try { lista = await calles(); } catch (e) { return []; }
+    var a = corregir(p.a, lista), b = p.tipo === "cruce" ? corregir(p.b, lista) : null;
+    if (!a && !b) { return []; }
+    var q2 = p.tipo === "cruce" ? sinComas(a ? a.nombre : p.a) + " y " + sinComas(b ? b.nombre : p.b)
+      : sinComas(a ? a.nombre : p.a) + (p.altura ? " " + p.altura : "");
+    if (tokens(q2).join(" ") === tokens(texto).join(" ")) { return []; }
+    var r2 = await usig(q2);
+    r2.forEach(function (x) { x.corregida = true; });
+    return r2;
+  }
+  function etiquetaOsm(pr) {
+    var calle = pr.street ? pr.street + (pr.housenumber ? " " + pr.housenumber : "") : (pr.name || "");
+    var caba = function (z) { return z === "Ciudad Autónoma de Buenos Aires" ? "CABA" : z; };
+    var zona = [pr.district || pr.locality, pr.city || pr.county, pr.state].filter(function (z) { return z && !/^Comuna \d+$/.test(z); }).map(caba);
+    var vistos = {}; zona = zona.filter(function (z) { if (vistos[z] || z === calle) { return false; } vistos[z] = 1; return true; });
+    var lugar = pr.name && pr.street && pr.name !== pr.street;
+    return { titulo: lugar ? pr.name : calle, sub: (lugar ? calle + " · " : "") + zona.slice(0, 2).join(", "), direccion: [calle, zona[0], zona[1]].filter(Boolean).join(", ") };
+  }
+  async function photon(q) {
+    var j = await pedir("https://photon.komoot.io/api/?limit=6&lat=" + AMBA.lat + "&lon=" + AMBA.lng + "&bbox=" + [CAJA.o, CAJA.s, CAJA.e, CAJA.n].join(",") + "&q=" + encodeURIComponent(q), espera.photon);
+    return (j.features || []).filter(function (f) { return !f.properties.countrycode || f.properties.countrycode === "AR"; }).map(function (f) {
+      var e = etiquetaOsm(f.properties);
+      return { titulo: e.titulo, sub: e.sub, direccion: e.direccion, lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0], fuente: "osm" };
+    });
+  }
+  async function georef(texto) {
+    var j = await pedir("https://apis.datos.gob.ar/georef/api/direcciones?max=6&direccion=" + encodeURIComponent(texto), espera.georef);
+    return (j.direcciones || []).filter(function (d) { return d.ubicacion && d.ubicacion.lat != null && enAmba(d.ubicacion.lat, d.ubicacion.lon); }).map(function (d) {
+      var ps = String(d.nomenclatura || "").split(","), titulo = capital(ps[0] || "").replace(/^Av\s/, "Av. ");
+      var zona = ps.slice(1).map(function (x) { return x.trim().replace("Ciudad Autónoma de Buenos Aires", "CABA"); }).filter(function (x) { return x && !/^Comuna \d+$/.test(x); }).join(", ");
+      return { titulo: titulo, sub: zona, direccion: titulo + (zona ? ", " + zona : ""), lat: d.ubicacion.lat, lng: d.ubicacion.lon, fuente: "georef", caba: /CABA/.test(zona) };
+    });
+  }
+
+  /* ---------- unir resultados: primero las direcciones oficiales ---------- */
+  function unir(res, cerca) {
+    var ref = cerca || AMBA;
+    var oficiales = res.usig.concat(res.georef).sort(function (a, b) { return (b.caba ? 1 : 0) - (a.caba ? 1 : 0) || distM(ref, a) - distM(ref, b); });
+    var todo = oficiales.concat(res.photon), out = [];
+    todo.forEach(function (x) { if (out.length < 7 && !out.some(function (y) { return distM(x, y) < 40; })) { out.push(x); } });
+    return out;
+  }
+
+  /* Busca en todas las fuentes a la vez. alAvanzar(lista) se llama cada vez que
+     llega una fuente, así la lista aparece enseguida. Solo falla si NINGUNA respondió. */
+  async function buscar(q, alAvanzar, cerca) {
+    var L = limpiar(q); if (L.texto.length < 3) { return []; }
+    var res = { usig: [], georef: [], photon: [] }, respondio = false;
+    function emitir() { if (alAvanzar) { try { alAvanzar(unir(res, cerca)); } catch (e) {} } }
+    var tOficial = usigCorrigiendo(L.texto).then(function (r) { respondio = true; res.usig = r; emitir(); })
+      .catch(function () { return georef(L.texto).then(function (r) { respondio = true; res.georef = r; emitir(); }).catch(function () {}); });
+    var tLibre = photon(String(q).trim()).then(function (r) { respondio = true; res.photon = r; emitir(); }).catch(function () {});
+    await Promise.all([tOficial, tLibre]);
+    if (!respondio) { throw new Error("Sin conexión con los buscadores de direcciones"); }
+    return unir(res, cerca);
+  }
+
+  /* Dirección aproximada de un punto (cuando se marca a mano en el mapa). */
+  async function inversa(lat, lng) {
+    try {
+      var j = await pedir(USIG + "/normalizar/?lng=" + lng + "&lat=" + lat, 5000);
+      if (j && j.coordenadas && (j.nombre_calle || j.direccion)) { return desdeUsig(j).direccion; }
+    } catch (e) {}
+    try {
+      var p = await pedir("https://photon.komoot.io/reverse?lat=" + lat + "&lon=" + lng, 5000);
+      var f = (p.features || [])[0]; return f ? etiquetaOsm(f.properties).direccion : null;
+    } catch (e2) { return null; }
+  }
+  function precargar() { calles().catch(function () {}); }
+
+  return { buscar: buscar, inversa: inversa, precargar: precargar,
+    _t: { limpiar: limpiar, partes: partes, corregir: corregir, indexar: indexar, lindo: lindo, unir: unir, lev: lev, espera: espera } };
+})();
+if (typeof module !== "undefined") { module.exports = Geo; }
+
+;
+/* =====================================================================
    DATOS — Supabase (autoridad) + servicios externos gratuitos.
    Lo que sale a terceros: SOLO direcciones o coordenadas (nunca cliente,
    importes ni monedas). Cotizaciones: lectura pública.
@@ -1367,6 +1726,17 @@ var Datos = (function () {
   async function crearRepartidor(d) { return funcion("crear-repartidor", Object.assign({ accion: "crear" }, d)); }
   async function cambiarClave(id, clave) { return funcion("crear-repartidor", { accion: "clave", id: id, clave: clave }); }
 
+  /* ---------- planillas (admin edita; consulta solo lee) ---------- */
+  var SEL_PLAN = "id,titulo,descripcion,archivo,filas,n_hojas,creado,actualizado,subido_por";
+  async function planillas() { return chk(await sb.from("planillas").select(SEL_PLAN).order("actualizado", { ascending: false }).limit(500)); }
+  async function planilla(id) { return chk(await sb.from("planillas").select(SEL_PLAN + ",hojas").eq("id", id).single()); }
+  async function guardarPlanilla(p) {
+    var id = p.id, d = Object.assign({}, p); delete d.id;
+    if (id) { return chk(await sb.from("planillas").update(d).eq("id", id).select(SEL_PLAN).single()); }
+    return chk(await sb.from("planillas").insert(d).select(SEL_PLAN).single());
+  }
+  async function borrarPlanilla(id) { return chk(await sb.from("planillas").delete().eq("id", id)); }
+
   /* ---------- repartidor ---------- */
   async function misViajes(fecha) {
     var v = chk(await sb.from("viajes").select("*").eq("fecha", fecha).eq("repartidor_id", yo.id).neq("estado", "cancelado").order("creado"));
@@ -1405,8 +1775,7 @@ var Datos = (function () {
   }
   function cotizacionGuardada() { try { return JSON.parse(localStorage.getItem("ruta-cot") || "null"); } catch (e) { return null; } }
 
-  /* ---------- direcciones (Photon / OpenStreetMap) ---------- */
-  var AMBA = { lat: -34.6037, lng: -58.3816 };
+  /* ---------- direcciones ---------- */
   function coordsDeTexto(q) {
     var m = String(q).match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || String(q).match(/[?&](?:q|ll|query|destination)=(-?\d+\.\d+)(?:,|%2C)\s*(-?\d+\.\d+)/) ||
             String(q).trim().match(/^(-?\d{1,2}\.\d{3,})\s*,\s*(-?\d{1,3}\.\d{3,})$/);
@@ -1415,27 +1784,13 @@ var Datos = (function () {
     if (Math.abs(lat) > 90 || Math.abs(lng) > 180) { return null; }
     return { lat: lat, lng: lng };
   }
-  function etiqueta(pr) {
-    var calle = pr.street ? pr.street + (pr.housenumber ? " " + pr.housenumber : "") : (pr.name || "");
-    var caba = function (z) { return z === "Ciudad Autónoma de Buenos Aires" ? "CABA" : z; };
-    var zona = [pr.district || pr.locality, pr.city || pr.county, pr.state].filter(function (z) { return z && !/^Comuna \d+$/.test(z); }).map(caba);
-    var vistos = {}; zona = zona.filter(function (z) { if (vistos[z] || z === calle) { return false; } vistos[z] = 1; return true; });
-    return { titulo: pr.name && pr.street && pr.name !== pr.street ? pr.name : calle, sub: (pr.name && pr.street && pr.name !== pr.street ? calle + " · " : "") + zona.slice(0, 2).join(", "),
-             direccion: [calle, zona[0], zona[1]].filter(Boolean).join(", ") };
-  }
-  async function buscarDireccion(q) {
+  /* Búsqueda con varias fuentes y corrección de calles: ver geo.js */
+  async function buscarDireccion(q, alAvanzar) {
     var c = coordsDeTexto(q);
     if (c) { return [{ titulo: "Ubicación pegada", sub: c.lat.toFixed(5) + ", " + c.lng.toFixed(5), direccion: "", lat: c.lat, lng: c.lng, coords: true }]; }
-    var url = "https://photon.komoot.io/api/?limit=7&lat=" + AMBA.lat + "&lon=" + AMBA.lng + "&bbox=-59.6,-35.3,-57.6,-34.1&q=" + encodeURIComponent(q);
-    var j = await fetchJSON(url, 6000);
-    return (j.features || []).filter(function (f) { return !f.properties.countrycode || f.properties.countrycode === "AR"; }).map(function (f) {
-      var e = etiqueta(f.properties); return { titulo: e.titulo, sub: e.sub, direccion: e.direccion, lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0] };
-    });
+    return Geo.buscar(q, alAvanzar);
   }
-  async function direccionDe(lat, lng) {
-    try { var j = await fetchJSON("https://photon.komoot.io/reverse?lat=" + lat + "&lon=" + lng, 5000);
-      var f = (j.features || [])[0]; return f ? etiqueta(f.properties).direccion : null; } catch (e) { return null; }
-  }
+  function direccionDe(lat, lng) { return Geo.inversa(lat, lng); }
 
   /* ---------- tiempos de manejo (OSRM) ---------- */
   var cacheM = {};
@@ -1471,6 +1826,7 @@ var Datos = (function () {
     paradasDe: paradasDe, paradasRango: paradasRango, paradasCliente: paradasCliente, viajesDe: viajesDe, ubicaciones: ubicaciones, incidentes: incidentes,
     resolverIncidente: resolverIncidente, guardarParada: guardarParada, cancelarParada: cancelarParada, aplicarPlan: aplicarPlan, guardarCotizacion: guardarCotizacion,
     auditoria: auditoria, crearRepartidor: crearRepartidor, cambiarClave: cambiarClave,
+    planillas: planillas, planilla: planilla, guardarPlanilla: guardarPlanilla, borrarPlanilla: borrarPlanilla,
     misViajes: misViajes, iniciarViaje: iniciarViaje, finalizarViaje: finalizarViaje, marcarParada: marcarParada, reportarIncidente: reportarIncidente, reportarUbicacion: reportarUbicacion,
     escuchar: escuchar, cotizaciones: cotizaciones, cotizacionGuardada: cotizacionGuardada, buscarDireccion: buscarDireccion, direccionDe: direccionDe,
     coordsDeTexto: coordsDeTexto, matriz: matriz, geometria: geometria, usuario: function () { return yo; }
@@ -1774,6 +2130,177 @@ var Graf = (function () {
 
 ;
 /* =====================================================================
+   PLANILLAS — leer un Excel (solo el administrador) y mostrarlo (todos los
+   que pueden verlo). Se guarda el TEXTO de cada celda tal como se ve en
+   Excel, con números en formato argentino (1.234,56) y fechas dd/mm/aaaa.
+   El lector de Excel (SheetJS) se descarga solo cuando el admin sube uno,
+   verificado con su huella (SRI).
+   ===================================================================== */
+var Planillas = (function () {
+  "use strict";
+  var LIB = "https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js";
+  var SRI = "sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT";
+  var LIM = { bytes: 15 * 1024 * 1024, filas: 20000, cols: 200, celdas: 300000, json: 5500000 };
+  var cargando = null;
+
+  function libreria() {
+    if (typeof window !== "undefined" && window.XLSX) { return Promise.resolve(window.XLSX); }
+    if (cargando) { return cargando; }
+    cargando = new Promise(function (ok, mal) {
+      var s = document.createElement("script");
+      s.src = LIB; s.integrity = SRI; s.crossOrigin = "anonymous"; s.async = true;
+      s.onload = function () { if (window.XLSX) { ok(window.XLSX); } else { cargando = null; mal(new Error("No se pudo preparar el lector de Excel.")); } };
+      s.onerror = function () { cargando = null; s.remove(); mal(new Error("No se pudo cargar el lector de Excel. Revisá la conexión e intentá de nuevo.")); };
+      document.head.appendChild(s);
+    });
+    return cargando;
+  }
+
+  /* Números a formato argentino: intercambia punto y coma solo en celdas numéricas que no son fechas. */
+  function aArgentino(txt) { return String(txt).replace(/[.,]/g, function (c) { return c === "." ? "," : "."; }); }
+  function textoCelda(X, c) {
+    if (!c) { return ""; }
+    if (c.t === "b") { return c.v ? "Sí" : "No"; }
+    if (c.t === "e") { return c.w || "#ERROR"; }
+    if (c.t === "d") { return c.w || ""; }
+    var w = c.w != null ? String(c.w) : c.v != null ? String(c.v) : "";
+    // Excel (xlsx/xls) guarda el número y SheetJS lo formatea en inglés: se pasa a formato argentino.
+    // CSV y ODS ya traen el texto tal como se veía: no se toca.
+    if (c.t === "n" && c.z) {
+      var esFecha = false; try { esFecha = !!(X.SSF && X.SSF.is_date(c.z)); } catch (e) {}
+      if (!esFecha && /\d/.test(w) && !/[\/:]/.test(w)) { w = aArgentino(w); }
+    }
+    return w.replace(/\s+$/, "");
+  }
+
+  /* Libro -> { hojas:[{nombre, filas, num, encabezado, cols}], filas } */
+  function desdeLibro(X, wb) {
+    var ocultas = {};
+    try { (wb.Workbook && wb.Workbook.Sheets || []).forEach(function (s, i) { if (s && s.Hidden) { ocultas[wb.SheetNames[i]] = 1; } }); } catch (e) {}
+    var hojas = [], total = 0, celdas = 0;
+    wb.SheetNames.forEach(function (nombre) {
+      if (ocultas[nombre]) { return; }
+      var ws = wb.Sheets[nombre]; if (!ws || !ws["!ref"]) { return; }
+      var R = X.utils.decode_range(ws["!ref"]);
+      if (R.e.r - R.s.r + 1 > LIM.filas * 3) { throw new Error("La hoja «" + nombre + "» tiene demasiadas filas para compartir."); }
+      var filas = [], tipos = [];
+      for (var r = R.s.r; r <= R.e.r; r++) {
+        var fila = [], tfila = [];
+        for (var c = R.s.c; c <= Math.min(R.e.c, R.s.c + LIM.cols - 1); c++) {
+          var cel = ws[X.utils.encode_cell({ r: r, c: c })];
+          fila.push(textoCelda(X, cel)); tfila.push(cel ? cel.t : "z");
+        }
+        filas.push(fila); tipos.push(tfila);
+      }
+      // quitar filas vacías al principio/final y columnas vacías al final
+      var vacia = function (f) { return f.every(function (x) { return x === ""; }); };
+      while (filas.length && vacia(filas[filas.length - 1])) { filas.pop(); tipos.pop(); }
+      while (filas.length && vacia(filas[0])) { filas.shift(); tipos.shift(); }
+      if (!filas.length) { return; }
+      var ancho = 0; filas.forEach(function (f) { for (var i = f.length - 1; i >= 0; i--) { if (f[i] !== "") { ancho = Math.max(ancho, i + 1); break; } } });
+      // columnas vacías al principio
+      var desde = ancho; filas.forEach(function (f) { for (var i = 0; i < ancho; i++) { if (f[i] !== "") { desde = Math.min(desde, i); break; } } });
+      filas = filas.map(function (f) { return f.slice(desde, ancho); }); tipos = tipos.map(function (f) { return f.slice(desde, ancho); });
+      if (filas.length > LIM.filas) { throw new Error("La hoja «" + nombre + "» tiene " + filas.length.toLocaleString("es-AR") + " filas. El máximo es " + LIM.filas.toLocaleString("es-AR") + "."); }
+      var cols = ancho - desde;
+      // ¿la primera fila es un encabezado? texto en casi todas sus celdas y debajo hay datos
+      var f0 = filas[0], t0 = tipos[0], llenas = f0.filter(function (x) { return x !== ""; }).length;
+      var encabezado = filas.length > 1 && llenas >= Math.min(2, cols) && t0.every(function (t, i) { return f0[i] === "" || t === "s" || t === "str"; });
+      // columnas numéricas (para alinear a la derecha)
+      var num = []; for (var k = 0; k < cols; k++) {
+        var n = 0, m = 0; for (var j = encabezado ? 1 : 0; j < tipos.length; j++) { if (filas[j][k] !== "") { m++; if (tipos[j][k] === "n") { n++; } } }
+        num.push(m > 0 && n / m >= 0.6);
+      }
+      celdas += filas.length * cols; total += filas.length - (encabezado ? 1 : 0);
+      hojas.push({ nombre: String(nombre).slice(0, 60), filas: filas, num: num, encabezado: encabezado, cols: cols });
+    });
+    if (!hojas.length) { throw new Error("El archivo no tiene datos para mostrar."); }
+    if (celdas > LIM.celdas) { throw new Error("La planilla es muy grande para compartir (" + celdas.toLocaleString("es-AR") + " celdas). Dividila en partes."); }
+    var tam = JSON.stringify(hojas).length;
+    if (tam > LIM.json) { throw new Error("La planilla es muy pesada para compartir (" + (tam / 1e6).toFixed(1).replace(".", ",") + " MB de texto). Dividila en partes."); }
+    return { hojas: hojas, filas: total };
+  }
+
+  async function leer(archivo) {
+    if (!archivo) { throw new Error("No se eligió ningún archivo."); }
+    if (!/\.(xlsx|xlsm|xls|ods|csv)$/i.test(archivo.name)) { throw new Error("Ese archivo no es un Excel. Usá .xlsx, .xls, .ods o .csv."); }
+    if (archivo.size > LIM.bytes) { throw new Error("El archivo pesa más de 15 MB."); }
+    var X = await libreria();
+    var buf = await archivo.arrayBuffer(), wb;
+    try { wb = X.read(buf, { type: "array", cellNF: true, cellDates: false, dateNF: "dd/mm/yyyy", codepage: 65001 }); }
+    catch (e) { throw new Error("No se pudo leer el archivo. Si tiene contraseña, sacásela y volvé a intentar."); }
+    return desdeLibro(X, wb);
+  }
+  function tituloDeArchivo(n) {
+    var t = String(n || "Planilla").replace(/\.[^.]+$/, "").replace(/[_]+/g, " ").replace(/\s+/g, " ").trim();
+    return t ? t.charAt(0).toUpperCase() + t.slice(1) : "Planilla";
+  }
+
+  /* ---------------- visor (solo lectura) ---------------- */
+  function visor(pl, opts) {
+    opts = opts || {};
+    var h = UI.h, ic = UI.ic;
+    var hojas = pl.hojas || [], st = { hoja: 0, q: "", modo: opts.modo || (typeof innerWidth !== "undefined" && innerWidth < 640 ? "fichas" : "tabla"), mostradas: 0 };
+    var cuerpo = h("div.visor-cuerpo"), cont = h("span.visor-cont"), tabs = h("div.visor-tabs");
+    var buscar = h("input.inp", { type: "search", placeholder: "Buscar en la planilla", "aria-label": "Buscar en la planilla", oninput: UI.debounce(function (e) { st.q = e.target.value; pintar(); }, 140) });
+    var modo = h("div.seg.visor-modo");
+    function pintarModo() { UI.reemplazar(modo, [["tabla", "tabla", "Tabla"], ["fichas", "fichas", "Fichas"]].map(function (m) {
+      return h("button", { type: "button", "aria-pressed": st.modo === m[0] ? "true" : "false", onclick: function () { st.modo = m[0]; pintarModo(); pintar(); } }, ic(m[1], "sm"), h("span", m[2])); })); }
+    function pintarTabs() {
+      UI.limpiar(tabs); if (hojas.length < 2) { tabs.style.display = "none"; return; }
+      tabs.style.display = "";
+      hojas.forEach(function (ho, i) { tabs.appendChild(h("button.visor-tab", { type: "button", "aria-pressed": st.hoja === i ? "true" : "false", onclick: function () { st.hoja = i; st.q = ""; buscar.value = ""; pintarTabs(); pintar(); } }, ho.nombre)); });
+    }
+    var obs = null;
+    function pintar() {
+      if (obs) { obs.disconnect(); obs = null; }
+      UI.limpiar(cuerpo);
+      var ho = hojas[st.hoja]; if (!ho) { cuerpo.appendChild(h("div.vacio", h("b", "Sin datos"))); return; }
+      var cab = ho.encabezado ? ho.filas[0] : null;
+      var datos = ho.filas.map(function (f, i) { return { f: f, n: i + 1 }; }).slice(ho.encabezado ? 1 : 0);
+      var q = UI.norm(st.q).trim();
+      var vis = q ? datos.filter(function (x) { return x.f.some(function (c) { return c && UI.norm(c).indexOf(q) >= 0; }); }) : datos;
+      cont.textContent = (q ? vis.length.toLocaleString("es-AR") + " de " : "") + datos.length.toLocaleString("es-AR") + (datos.length === 1 ? " fila" : " filas");
+      if (!vis.length) { cuerpo.appendChild(h("div.vacio", h("div.ic", ic("buscar", "lg")), h("b", "Nada coincide"), h("span", "Probá con otra palabra."))); return; }
+      var letras = function (i) { var s = ""; i++; while (i > 0) { var m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
+      var nombres = cab ? cab.map(function (x, i) { return x || letras(i); }) : ho.filas[0].map(function (_, i) { return letras(i); });
+      var cel = function (txt) { return q && txt ? UI.resaltar(txt, st.q) : txt; };
+      var lote = 200, hecho = 0, destino, fin = h("div.visor-fin");
+      if (st.modo === "tabla") {
+        var tb = h("tbody");
+        var tabla = h("table.tabla-pl", h("thead", h("tr", h("th.n", "#"), nombres.map(function (n, i) { return h("th" + (ho.num[i] ? ".num" : ""), { title: n }, n); }))), tb);
+        cuerpo.appendChild(h("div.tabla-scroll", { tabindex: "0", "aria-label": "Planilla " + ho.nombre }, tabla));
+        destino = function (x) { return h("tr", h("td.n", String(x.n)), x.f.map(function (c, i) { return h("td" + (ho.num[i] ? ".num" : ""), cel(c)); })); };
+        var agregar = function () { var fr = document.createDocumentFragment(); vis.slice(hecho, hecho + lote).forEach(function (x) { fr.appendChild(destino(x)); }); tb.appendChild(fr); hecho = Math.min(vis.length, hecho + lote); };
+      } else {
+        var grid = h("div.fichas"); cuerpo.appendChild(grid);
+        var agregar = function () {
+          var fr = document.createDocumentFragment();
+          vis.slice(hecho, hecho + lote).forEach(function (x) {
+            var ti = -1; for (var i = 0; i < x.f.length; i++) { if (x.f[i] !== "") { ti = i; break; } }
+            fr.appendChild(h("article.ficha", h("div.ficha-t", h("b", cel(ti >= 0 ? x.f[ti] : "—")), h("span", "Fila " + x.n)),
+              h("dl", x.f.map(function (c, i) { return i === ti || c === "" ? null : h("div", h("dt", nombres[i]), h("dd" + (ho.num[i] ? ".num" : ""), cel(c))); }))));
+          });
+          grid.appendChild(fr); hecho = Math.min(vis.length, hecho + lote);
+        };
+      }
+      agregar(); cuerpo.appendChild(fin);
+      if (hecho < vis.length && typeof IntersectionObserver !== "undefined") {
+        obs = new IntersectionObserver(function (es) { if (es[0].isIntersecting) { agregar(); if (hecho >= vis.length) { obs.disconnect(); obs = null; fin.remove(); } } }, { root: null, rootMargin: "600px" });
+        obs.observe(fin);
+      }
+    }
+    pintarTabs(); pintarModo(); pintar();
+    var el = h("div.visor", h("div.visor-barra", tabs, h("div.visor-herr", h("div.inp-ico.visor-busca", ic("buscar", "sm"), buscar), modo, cont)), cuerpo);
+    return { el: el, destruir: function () { if (obs) { obs.disconnect(); } } };
+  }
+
+  return { leer: leer, desdeLibro: desdeLibro, visor: visor, tituloDeArchivo: tituloDeArchivo, libreria: libreria, LIM: LIM };
+})();
+if (typeof module !== "undefined") { module.exports = Planillas; }
+
+;
+/* =====================================================================
    ADMIN — estado, shell, cotización, datos en vivo, paleta de comandos.
    ===================================================================== */
 var A = (function () {
@@ -1856,7 +2383,7 @@ var A = (function () {
   var NAV = [
     { id: "vivo", t: "En vivo", i: "vivo", k: "1" }, { id: "planificar", t: "Planificar rutas", i: "magia", k: "2" },
     { id: "paradas", t: "Paradas", i: "lista", k: "3" }, { id: "clientes", t: "Clientes", i: "clientes", k: "4" },
-    { id: "equipo", t: "Equipo", i: "equipo", k: "5" }, { id: "ajustes", t: "Ajustes", i: "ajustes", k: "6" }
+    { id: "equipo", t: "Equipo", i: "equipo", k: "5" }, { id: "planillas", t: "Planillas", i: "tabla", k: "6" }, { id: "ajustes", t: "Ajustes", i: "ajustes", k: "7" }
   ];
   function montar(contenedor, perfil) {
     S.perfil = perfil; raiz = contenedor;
@@ -1984,6 +2511,7 @@ var A = (function () {
       { t: "Ir a hoy", s: UI.fechaSub(UI.hoyISO()), i: "reloj", f: function () { cambiarFecha(UI.hoyISO()); } },
       { t: "Agregar repartidor", s: "Crear un usuario para el celular", i: "moto", f: function () { ir("equipo"); setTimeout(function () { A.nuevaPersona("repartidor"); }, 60); } },
       { t: "Agregar administrador", s: "Dar acceso total a otra persona", i: "escudo", f: function () { ir("equipo"); setTimeout(function () { A.nuevaPersona("admin"); }, 60); } },
+      { t: "Subir planilla", s: "Compartir un Excel con el equipo de consulta", i: "subir", f: function () { ir("planillas"); setTimeout(A.subirPlanilla, 60); } },
       { t: "Actualizar cotización", s: "dolarapi + bluelytics", i: "refrescar", f: function () { cargarCot(); } }
     ];
     function pintar() {
@@ -2582,24 +3110,54 @@ var A = (function () {
       setTimeout(function () { var f = montosEl.querySelector("input.inp.num"); if (f) { f.focus(); } }, 50);
     }
 
-    // --- dirección con búsqueda (Photon) + pin arrastrable ---
-    var inpDir = h("input.inp", { placeholder: "Calle y altura, barrio — o pegá un link de Google Maps", value: d.direccion, autocomplete: "off", disabled: soloLectura });
-    var acDir = h("div.ac", h("div.inp-ico", ic("pin", "sm"), inpDir)); var listaDir = null, opsDir = [], selDir = 0;
-    var estadoDir = h("div.ayuda");
+    // --- dirección: búsqueda en varias fuentes + pin arrastrable + marcado a mano ---
+    var inpDir = h("input.inp", { placeholder: "Calle y altura, o esquina (ej.: Riobamba y Corrientes)", value: d.direccion, autocomplete: "off", disabled: soloLectura });
+    var acDir = h("div.ac", h("div.inp-ico", ic("pin", "sm"), inpDir)); var listaDir = null, opsDir = [], selDir = 0, nBusq = 0;
+    var estadoDir = h("div.estado-dir");
+    if (!soloLectura && window.Geo && Geo.precargar) { Geo.precargar(); }
+    function pintarEstadoDir(e) {
+      var botonMapa = h("button.btn.sm", { type: "button", onclick: marcarEnMapa }, ic("pin", "sm"), "Marcarla en el mapa");
+      var M = {
+        buscando: [h("span.giro"), h("span", "Buscando la dirección…")],
+        elegir: [ic("info", "sm"), h("span", "Elegí la correcta de la lista.")],
+        nada: [ic("info", "sm"), h("span", "No encontramos esa dirección. Revisá cómo está escrita o marcala en el mapa."), botonMapa],
+        sinred: [ic("alerta", "sm"), h("span", "Los buscadores de direcciones no responden ahora."), botonMapa, h("button.btn.ghost.sm", { type: "button", onclick: function () { buscarDir(); } }, ic("refrescar", "sm"), "Reintentar")],
+        ok: [ic("check", "sm"), h("span", "Ubicación marcada. Podés arrastrar el punto para ajustar.")],
+        mano: [ic("pin", "sm"), h("span", "Arrastrá el punto hasta la puerta exacta. La dirección escrita queda como está.")],
+        ajustado: [ic("check", "sm"), h("span", "Punto ajustado a mano.")]
+      };
+      estadoDir.className = "estado-dir " + (e === "sinred" ? "err" : e === "ok" || e === "ajustado" || e === "mano" ? "ok" : "");
+      UI.reemplazar(estadoDir, M[e] || []);
+    }
+    function marcarEnMapa() {
+      if (!mm) { return; }
+      mm.listo.then(function () {
+        if (!mm.map) { UI.toast("El mapa no cargó: revisá la conexión e intentá de nuevo", "bad"); return; }
+        var c = mm.map.getCenter(), b = A.base();
+        var q = d.lat != null ? { lat: d.lat, lng: d.lng } : c ? { lat: c.lat, lng: c.lng } : b;
+        if (!q) { return; }
+        d.lat = q.lat; d.lng = q.lng;
+        mm.pinEditable({ lat: q.lat, lng: q.lng }, function (x) { d.lat = x.lat; d.lng = x.lng; pintarEstadoDir("ajustado"); });
+        if (mm.map && mm.map.getZoom() < 14) { mm.centrar(q, 15); }
+        inpDir.classList.remove("err"); pintarEstadoDir("mano");
+        mini.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    }
     var buscarDir = UI.debounce(async function () {
       var q = inpDir.value.trim(); if (q.length < 4) { return; }
-      estadoDir.textContent = "Buscando…"; estadoDir.className = "ayuda";
+      var yo = ++nBusq; pintarEstadoDir("buscando");
       try {
-        var r = await Datos.buscarDireccion(q + (Datos.coordsDeTexto(q) ? "" : ""));
-        if (inpDir.value.trim() !== q) { return; }
-        estadoDir.textContent = r.length ? "" : "No encontré esa dirección. Probá con calle y altura, o marcá el punto en el mapa.";
+        var r = await Datos.buscarDireccion(q, function (parcial) {
+          if (yo === nBusq && inpDir.value.trim() === q && parcial.length) { mostrarDir(parcial); pintarEstadoDir("elegir"); }
+        });
+        if (yo !== nBusq || inpDir.value.trim() !== q) { return; }
         if (r.length && r[0].coords) { aplicarDir(r[0]); return; }
-        mostrarDir(r);
-      } catch (e) { estadoDir.textContent = "Sin conexión al buscador. Podés marcar el punto tocando el mapa."; estadoDir.className = "ayuda err"; }
+        mostrarDir(r); pintarEstadoDir(r.length ? "elegir" : "nada");
+      } catch (e) { if (yo === nBusq) { pintarEstadoDir("sinred"); } }
     }, 320);
     function mostrarDir(r) {
       if (listaDir) { listaDir.remove(); listaDir = null; }
-      if (!r.length) { return; }
+      if (!r.length || document.activeElement !== inpDir && !mostrarDir.forzar) { return; }
       opsDir = r; selDir = 0;
       listaDir = h("div.ac-l", r.map(function (x, i) {
         return h("div.ac-o", { "aria-selected": i === 0 ? "true" : "false", onmousedown: function (e) { e.preventDefault(); aplicarDir(x); } }, h("div.ic", ic("pin", "sm")), h("div", h("b", x.titulo), h("small", x.sub)));
@@ -2610,9 +3168,24 @@ var A = (function () {
       if (listaDir) { listaDir.remove(); listaDir = null; }
       d.lat = x.lat; d.lng = x.lng;
       if (x.direccion) { d.direccion = x.direccion; inpDir.value = x.direccion; }
-      else { Datos.direccionDe(x.lat, x.lng).then(function (t) { if (t && !inpDir.value.match(/[a-z]/i)) { d.direccion = t; inpDir.value = t; } }); if (/^https?:|^-?\d/.test(inpDir.value)) { inpDir.value = ""; d.direccion = ""; inpDir.placeholder = "Escribí la dirección para el repartidor"; } }
-      estadoDir.textContent = "Ubicación marcada. Podés ajustar el punto arrastrándolo."; estadoDir.className = "ayuda ok";
-      ubicar(true); inpDir.classList.remove("err");
+      else {
+        if (/^https?:|^-?\d/.test(inpDir.value)) { inpDir.value = ""; d.direccion = ""; inpDir.placeholder = "Escribí la dirección para el repartidor"; }
+        Datos.direccionDe(x.lat, x.lng).then(function (t) { if (t && !/[a-z]/i.test(inpDir.value)) { d.direccion = t; inpDir.value = t; } });
+      }
+      pintarEstadoDir("ok"); ubicar(true); inpDir.classList.remove("err");
+    }
+    // Al guardar con la dirección escrita pero sin elegirla de la lista: se ubica sola si no hay dudas.
+    async function ubicarAlGuardar() {
+      var q = inpDir.value.trim(); pintarEstadoDir("buscando");
+      try {
+        var r = await Datos.buscarDireccion(q);
+        var ofi = r.filter(function (x) { return x.fuente === "usig" || x.fuente === "georef"; });
+        var caba = ofi.filter(function (x) { return x.caba; });
+        var unica = caba.length === 1 ? caba[0] : ofi.length === 1 ? ofi[0] : null;
+        if (unica) { aplicarDir(unica); UI.toast("Ubicada en " + unica.direccion, "info"); return true; }
+        if (r.length) { mostrarDir.forzar = true; mostrarDir(r); mostrarDir.forzar = false; pintarEstadoDir("elegir"); inpDir.focus(); UI.toast("Hay más de una dirección posible: elegí la correcta", "info"); return false; }
+        pintarEstadoDir("nada"); inpDir.classList.add("err"); UI.toast("No encontramos la dirección. Marcala en el mapa.", "bad"); return false;
+      } catch (e) { pintarEstadoDir("sinred"); inpDir.classList.add("err"); UI.toast("Los buscadores no responden. Marcá la dirección en el mapa.", "bad"); return false; }
     }
     inpDir.addEventListener("input", function () { d.direccion = inpDir.value; buscarDir(); });
     inpDir.addEventListener("keydown", function (e) {
@@ -2632,7 +3205,7 @@ var A = (function () {
         mm.base(A.base());
         if (d.lat != null) {
           if (soloLectura) { mm.paradas([{ id: "p", lat: d.lat, lng: d.lng, num: "" }]); mm.centrar(d, 15); }
-          else if (mover) { mm.pinEditable({ lat: d.lat, lng: d.lng }, function (q) { d.lat = q.lat; d.lng = q.lng; estadoDir.textContent = "Punto ajustado a mano."; estadoDir.className = "ayuda ok"; }); }
+          else if (mover) { mm.pinEditable({ lat: d.lat, lng: d.lng }, function (q) { d.lat = q.lat; d.lng = q.lng; pintarEstadoDir("ajustado"); }); }
         }
       });
     }
@@ -2727,6 +3300,10 @@ var A = (function () {
     setTimeout(function () { mm = Mapa.crear(mini, { controles: false, zoom: 11 }); if (!soloLectura) { mm.alTocar(function (q) { aplicarDir({ lat: q.lat, lng: q.lng, direccion: "" }); }); } ubicar(true); if (d.lat == null) { mm.listo.then(function () { var b = A.base(); if (b) { mm.centrar(b, 11.5); } }); } }, 60);
 
     async function guardar() {
+      if (d.direccion.trim() && d.lat == null && d.cliente_nombre.trim()) {
+        var bien = await UI.conCarga(btnG, ubicarAlGuardar);
+        if (!bien) { return; }
+      }
       var errores = [];
       if (!d.cliente_nombre.trim()) { errores.push("el cliente"); inpCli.classList.add("err"); }
       if (!d.direccion.trim() || d.lat == null) { errores.push("la dirección ubicada en el mapa"); inpDir.classList.add("err"); }
@@ -2881,25 +3458,28 @@ var A = (function () {
 
   /* ---------------- Equipo: administradores y repartidores ---------------- */
   var ROLES = {
-    admin: { t: "Administrador", i: "escudo", d: "Ve y maneja todo: paradas, recorridos, clientes y ajustes." },
-    repartidor: { t: "Repartidor", i: "moto", d: "Entra desde el celular y ve solo los recorridos que le asignan." }
+    admin: { t: "Administrador", i: "escudo", c: "Maneja todo", d: "Ve y maneja todo: paradas, recorridos, clientes, planillas y ajustes." },
+    repartidor: { t: "Repartidor", i: "moto", c: "Hace los recorridos", d: "Entra desde el celular y ve solo los recorridos que le asignan." },
+    consulta: { t: "Consulta", i: "ojo", c: "Solo mira planillas", d: "Solo ve las planillas que compartís. No ve paradas, clientes ni montos, y no puede editar nada." }
   };
-  function pillRol(rol) { var r = ROLES[rol] || ROLES.repartidor; return h("span.pill" + (rol === "admin" ? ".acc" : ""), ic(r.i, "sm"), r.t); }
+  var ORDEN_ROL = { admin: 0, consulta: 1, repartidor: 2 };
+  function pillRol(rol) { var r = ROLES[rol] || ROLES.repartidor; return h("span.pill" + (rol === "admin" ? ".acc" : rol === "consulta" ? ".info" : ""), ic(r.i, "sm"), r.t); }
   A.pillRol = pillRol;
-  function personas() { return S.perfiles.slice().sort(function (a, b) { return (a.rol === b.rol ? 0 : a.rol === "admin" ? -1 : 1) || a.nombre.localeCompare(b.nombre, "es"); }); }
+  function personas() { return S.perfiles.slice().sort(function (a, b) { return (ORDEN_ROL[a.rol] - ORDEN_ROL[b.rol]) || a.nombre.localeCompare(b.nombre, "es"); }); }
   function otrosAdmins(id) { return S.perfiles.filter(function (p) { return p.rol === "admin" && p.activo && p.id !== id; }); }
   function soyYo(p) { return S.perfil && p.id === S.perfil.id; }
   function selectorRol(valor, alCambiar, bloqueado) {
-    var seg = h("div.seg", { style: { display: "flex", width: "100%" } });
+    var caja = h("div.roles", { role: "radiogroup", "aria-label": "Rol" });
     function pintar() {
-      UI.reemplazar(seg, ["repartidor", "admin"].map(function (k) {
-        return h("button", { type: "button", disabled: !!bloqueado, "aria-pressed": valor === k ? "true" : "false",
-          style: { flex: 1, justifyContent: "center", cursor: bloqueado ? "not-allowed" : "pointer" },
-          onclick: function () { if (bloqueado) { return; } valor = k; pintar(); alCambiar(k); } }, ic(ROLES[k].i, "sm"), ROLES[k].t);
+      UI.reemplazar(caja, ["repartidor", "consulta", "admin"].map(function (k) {
+        var sel = valor === k;
+        return h("button.rol-op" + (sel ? ".sel" : ""), { type: "button", role: "radio", "aria-checked": sel ? "true" : "false", disabled: !!bloqueado && !sel,
+          onclick: function () { if (bloqueado) { return; } valor = k; pintar(); alCambiar(k); } },
+          h("span.rol-ic", ic(ROLES[k].i, "sm")), h("span.rol-tx", h("b", ROLES[k].t), h("small", ROLES[k].c)), h("span.rol-ok", ic("check", "sm")));
       }));
     }
     pintar();
-    return seg;
+    return caja;
   }
   function selectorColor(d) {
     var colores = h("div", { style: { display: "flex", gap: "8px", flexWrap: "wrap" } });
@@ -2912,25 +3492,26 @@ var A = (function () {
 
   A.nuevaPersona = function (rolInicial) {
     var usados = S.perfiles.map(function (r) { return (r.color || "").toLowerCase(); });
-    var d = { nombre: "", email: "", clave: "", telefono: "", rol: rolInicial === "admin" ? "admin" : "repartidor",
+    var d = { nombre: "", email: "", clave: "", telefono: "", rol: ROLES[rolInicial] ? rolInicial : "repartidor",
       color: A.PALETA.find(function (c) { return usados.indexOf(c) < 0; }) || A.PALETA[0] };
     var ayudaRol = h("div.ayuda", ROLES[d.rol].d);
+    var lblColor = h("label", d.rol === "repartidor" ? "Color en el mapa" : "Color");
     var gen = function () { var a = "abcdefghjkmnpqrstuvwxyz23456789", s = ""; var r = new Uint32Array(10); crypto.getRandomValues(r); r.forEach(function (x) { s += a[x % a.length]; }); return s; };
     var inpClave = h("input.inp.mono", { value: "", oninput: function (e) { d.clave = e.target.value; } });
     var btn = h("button.btn.pri", { onclick: crear }, ic("check", "sm"), "Crear");
     var m = UI.modal([h("div.mb", h("h3", "Agregar a alguien al equipo"), h("p", "Entra con este email y contraseña. Podés cambiarle el rol cuando quieras."),
       h("div", { style: { display: "flex", flexDirection: "column", gap: "12px", marginTop: "16px" } },
-        h("div.campo", h("label", "Rol"), selectorRol(d.rol, function (k) { d.rol = k; UI.reemplazar(ayudaRol, ROLES[k].d); }), ayudaRol),
+        h("div.campo", h("label", "Rol"), selectorRol(d.rol, function (k) { d.rol = k; UI.reemplazar(ayudaRol, ROLES[k].d); lblColor.textContent = k === "repartidor" ? "Color en el mapa" : "Color"; }), ayudaRol),
         h("div.campo", h("label", "Nombre"), h("input.inp", { autofocus: true, oninput: function (e) { d.nombre = e.target.value; } })),
         h("div.campo", h("label", "Email"), h("input.inp", { type: "email", autocomplete: "off", oninput: function (e) { d.email = e.target.value; } })),
         h("div.campo", h("label", "Contraseña"), h("div", { style: { display: "flex", gap: "8px" } }, inpClave, h("button.btn", { type: "button", onclick: function () { d.clave = gen(); inpClave.value = d.clave; } }, "Generar")), h("div.ayuda", "Mínimo 8 caracteres. Pasásela por un medio seguro.")),
         h("div.campo", h("label", "Teléfono (para llamarlo)"), h("input.inp", { type: "tel", oninput: function (e) { d.telefono = e.target.value; } })),
-        h("div.campo", h("label", "Color en el mapa"), selectorColor(d)))),
+        h("div.campo", lblColor, selectorColor(d)))),
       h("div.mp", h("button.btn.ghost", { onclick: function () { m.cerrar(); } }, "Cancelar"), btn)]);
     async function crear() {
       if (!d.nombre.trim()) { UI.toast("Falta el nombre", "bad"); return; }
       await UI.conCarga(btn, async function () {
-        try { await Datos.crearRepartidor(d); m.cerrar(); UI.toast(d.nombre.trim() + " ya puede entrar como " + ROLES[d.rol].t.toLowerCase()); await A.cargarBase(); if (S.vista === "equipo") { A.ir("equipo"); } }
+        try { await Datos.crearRepartidor(d); m.cerrar(); UI.toast(d.nombre.trim() + " ya puede entrar · " + ROLES[d.rol].t); await A.cargarBase(); if (S.vista === "equipo") { A.ir("equipo"); } }
         catch (e) { UI.toast(UI.mensajeError(e), "bad"); }
       });
     }
@@ -2989,8 +3570,10 @@ var A = (function () {
       var hechas = ps.filter(function (p) { return p.estado === "completada"; }).length;
       var enCurso = vs.some(function (v) { return v.estado === "en_curso"; });
       var u = S.ubic.find(function (x) { return x.repartidor_id === r.id; });
+      var esCons = r.rol === "consulta";
       var estado = !r.activo ? h("span.pill.bad", "Desactivado")
         : esAdmin ? h("span.pill.acc", ic("escudo", "sm"), "Acceso total")
+        : esCons ? h("span.pill.info", ic("ojo", "sm"), "Solo lectura")
         : enCurso ? h("span.pill.acc.vivo", h("span.dot"), "En la calle")
         : vs.length ? h("span.pill.info", "Recorrido asignado") : h("span.pill", "Libre");
       return h("article.rep-card", { style: { "--c": r.color, opacity: r.activo ? 1 : .6 } },
@@ -3000,7 +3583,11 @@ var A = (function () {
             h("div", { style: { fontSize: "12.5px", color: "var(--muted)", display: "flex", alignItems: "center", gap: "6px", marginTop: "5px", flexWrap: "wrap" } },
               estado, r.activo && !esAdmin && enCurso && u ? h("span", "GPS " + UI.hace(u.en)) : null)),
           h("button.btn.ghost.icon.sm", { "aria-label": "Editar a " + r.nombre, onclick: function () { editarPersona(r); } }, ic("editar", "sm"))),
-        esAdmin
+        esCons
+          ? h("div.st", { style: { gridTemplateColumns: "1fr 1fr" } },
+              h("div", h("small", "Puede ver"), h("b", { style: { fontSize: "13px", fontFamily: "var(--font)" } }, "Planillas")),
+              r.telefono ? h("a.btn", { href: "tel:" + r.telefono, "aria-label": "Llamar a " + r.nombre, style: { height: "auto", flexDirection: "column", gap: "2px" } }, ic("telefono", "sm"), h("small", { style: { color: "var(--ink-2)" } }, "Llamar")) : h("div", h("small", "En el equipo desde"), h("b", { style: { fontSize: "13px", fontFamily: "var(--font)" } }, r.creado ? UI.fechaCorta(r.creado.slice(0, 10)) : "—")))
+        : esAdmin
           ? h("div.st", { style: { gridTemplateColumns: "1fr 1fr" } },
               h("div", h("small", "En el equipo desde"), h("b", { style: { fontSize: "13px", fontFamily: "var(--font)" } }, r.creado ? UI.fechaCorta(r.creado.slice(0, 10)) : "—")),
               r.telefono ? h("a.btn", { href: "tel:" + r.telefono, style: { height: "auto", flexDirection: "column", gap: "2px" } }, ic("telefono", "sm"), h("small", { style: { color: "var(--ink-2)" } }, "Llamar")) : h("div", h("small", "Teléfono"), h("b", { style: { fontSize: "13px", color: "var(--faint)" } }, "—")))
@@ -3011,6 +3598,7 @@ var A = (function () {
       var todas = personas();
       var admins = todas.filter(function (p) { return p.rol === "admin"; });
       var reps = todas.filter(function (p) { return p.rol === "repartidor"; });
+      var cons = todas.filter(function (p) { return p.rol === "consulta"; });
       UI.limpiar(aviso);
       if (admins.filter(function (p) { return p.activo; }).length < 2) {
         aviso.appendChild(h("div.nota", ic("info", "sm"), h("div",
@@ -3020,7 +3608,9 @@ var A = (function () {
       }
       UI.limpiar(grupos);
       if (!todas.length) { grupos.appendChild(h("div.vacio", h("div.ic", ic("equipo", "lg")), h("b", "Todavía no hay nadie más"), h("span", "Agregá a las personas que van a usar el sistema."), h("button.btn.pri", { onclick: function () { A.nuevaPersona("repartidor"); } }, ic("mas", "sm"), "Agregar persona"))); return; }
-      [["Administradores", admins, "Ven y manejan todo el sistema.", "admin"], ["Repartidores", reps, "Entran desde el celular y ven solo sus recorridos.", "repartidor"]].forEach(function (g) {
+      [["Administradores", admins, "Ven y manejan todo el sistema.", "admin"], ["Repartidores", reps, "Entran desde el celular y ven solo sus recorridos.", "repartidor"],
+        ["Consulta", cons, "Solo ven las planillas que compartís.", "consulta"]].forEach(function (g) {
+        if (g[3] === "consulta" && !g[1].length) { return; }
         grupos.appendChild(h("section",
           h("div.grupo-h.desc", { style: { marginBottom: "12px" } }, g[0], h("span", { style: { fontWeight: 500, textTransform: "none", letterSpacing: 0 } }, g[2])),
           g[1].length ? h("div.grid-cards", g[1].map(tarjeta))
@@ -3090,6 +3680,162 @@ var A = (function () {
       });
     }
     return {};
+  };
+})();
+
+;
+/* =====================================================================
+   ADMIN · PLANILLAS — subir un Excel y compartirlo, solo lectura, con las
+   personas de rol "Consulta". Solo el administrador sube, cambia o borra.
+   ===================================================================== */
+(function () {
+  "use strict";
+  var h = UI.h, ic = UI.ic, S = A.S;
+  var ACEPTA = ".xlsx,.xlsm,.xls,.ods,.csv";
+
+  function consultas() { return S.perfiles.filter(function (p) { return p.rol === "consulta"; }); }
+  function fechaHora(ts) { return ts ? UI.fechaCorta(new Date(ts).toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" })).slice(0, 5) + " " + UI.horaDe(ts) : "—"; }
+  function metaTxt(p) { return (p.n_hojas > 1 ? p.n_hojas + " hojas · " : "") + Number(p.filas || 0).toLocaleString("es-AR") + (p.filas === 1 ? " fila" : " filas"); }
+
+  function elegirArchivo(alElegir) {
+    var inp = h("input", { type: "file", accept: ACEPTA, style: { display: "none" } });
+    inp.addEventListener("change", function () { var f = inp.files && inp.files[0]; inp.remove(); if (f) { alElegir(f); } });
+    document.body.appendChild(inp); inp.click();
+  }
+
+  // Leer el Excel -> previa -> publicar (nueva o reemplazo)
+  async function subir(archivo, existente) {
+    var aviso = UI.modal([h("div.mb", { style: { textAlign: "center", padding: "28px 22px" } },
+      h("div.leyendo", h("span.giro"), h("b", "Leyendo " + archivo.name + "…")), h("p", { style: { marginTop: "8px" } }, "Esto queda en tu computadora hasta que confirmes."))], { fijo: true });
+    var libro;
+    try { libro = await Planillas.leer(archivo); }
+    catch (e) { aviso.cerrar(); UI.toast(UI.mensajeError(e), "bad", 7000); return; }
+    aviso.cerrar();
+    previa(libro, archivo.name, existente);
+  }
+  function previa(libro, nombreArchivo, existente) {
+    var d = { titulo: existente ? existente.titulo : Planillas.tituloDeArchivo(nombreArchivo), descripcion: existente ? existente.descripcion || "" : "" };
+    var vis = Planillas.visor({ hojas: libro.hojas }, { modo: "tabla" });
+    var btn = h("button.btn.pri", { onclick: publicar }, ic(existente ? "refrescar" : "check", "sm"), existente ? "Reemplazar" : "Publicar");
+    var quien = consultas();
+    var m = UI.modal([
+      h("div.mb",
+        h("div.previa-h", h("div.pl-ic", ic("tabla")), h("div", h("h3", existente ? "Reemplazar «" + existente.titulo + "»" : "Revisá antes de publicar"),
+          h("p", nombreArchivo + " · " + (libro.hojas.length > 1 ? libro.hojas.length + " hojas · " : "") + libro.filas.toLocaleString("es-AR") + " filas"))),
+        h("div.g2", { style: { marginTop: "16px" } },
+          h("div.campo", h("label", "Título"), h("input.inp", { value: d.titulo, maxlength: 120, oninput: function (e) { d.titulo = e.target.value; } })),
+          h("div.campo", h("label", "Descripción (opcional)"), h("input.inp", { value: d.descripcion, maxlength: 600, placeholder: "Ej.: precios de hoy, vigentes hasta las 18", oninput: function (e) { d.descripcion = e.target.value; } }))),
+        h("div.previa-visor", vis.el),
+        h("div.ayuda", { style: { marginTop: "10px" } }, ic("ojo", "sm"), " ",
+          quien.length ? (existente ? "Van a ver esta versión en lugar de la anterior: " : "La van a poder ver, sin editar: ") + quien.map(function (p) { return p.nombre; }).join(", ") + "."
+            : "Todavía no hay nadie con rol Consulta. La podés publicar igual y sumar a esa persona desde Equipo.")),
+      h("div.mp", h("button.btn.ghost", { onclick: function () { m.cerrar(); } }, "Cancelar"), btn)], { alCerrar: function () { vis.destruir(); } });
+    m.nodo.classList.add("modal-ancho");
+    async function publicar() {
+      if (!d.titulo.trim()) { UI.toast("Poné un título", "bad"); return; }
+      await UI.conCarga(btn, async function () {
+        try {
+          var g = await Datos.guardarPlanilla({ id: existente ? existente.id : null, titulo: d.titulo.trim(), descripcion: d.descripcion.trim() || null,
+            archivo: String(nombreArchivo).slice(0, 200), hojas: libro.hojas, filas: libro.filas, n_hojas: libro.hojas.length });
+          m.cerrar(); UI.toast(existente ? "Planilla reemplazada" : "Planilla publicada");
+          if (S.vista === "planillas") { A.ir("planillas"); }
+          return g;
+        } catch (e) { UI.toast(UI.mensajeError(e), "bad"); }
+      });
+    }
+  }
+
+  function editarDatos(p) {
+    var d = { titulo: p.titulo, descripcion: p.descripcion || "" };
+    var btn = h("button.btn.pri", { onclick: guardar }, ic("check", "sm"), "Guardar");
+    var m = UI.modal([h("div.mb", h("h3", "Editar título y descripción"),
+      h("div", { style: { display: "flex", flexDirection: "column", gap: "12px", marginTop: "14px" } },
+        h("div.campo", h("label", "Título"), h("input.inp", { value: d.titulo, maxlength: 120, oninput: function (e) { d.titulo = e.target.value; } })),
+        h("div.campo", h("label", "Descripción"), h("textarea.inp", { maxlength: 600, oninput: function (e) { d.descripcion = e.target.value; } }, d.descripcion)))),
+      h("div.mp", h("button.btn.ghost", { onclick: function () { m.cerrar(); } }, "Cancelar"), btn)]);
+    async function guardar() {
+      if (!d.titulo.trim()) { UI.toast("Poné un título", "bad"); return; }
+      await UI.conCarga(btn, async function () {
+        try { await Datos.guardarPlanilla({ id: p.id, titulo: d.titulo.trim(), descripcion: d.descripcion.trim() || null }); m.cerrar(); UI.toast("Guardado"); A.ir("planillas"); }
+        catch (e) { UI.toast(UI.mensajeError(e), "bad"); }
+      });
+    }
+  }
+  async function borrar(p, alListo) {
+    if (!(await UI.confirmar("Eliminar planilla", "«" + p.titulo + "» deja de verse para el equipo de consulta. Queda registrado en el historial.", { si: "Eliminar", peligro: true }))) { return; }
+    try { await Datos.borrarPlanilla(p.id); UI.toast("Planilla eliminada"); if (alListo) { alListo(); } A.ir("planillas"); }
+    catch (e) { UI.toast(UI.mensajeError(e), "bad"); }
+  }
+  function menu(p, ancla, alListo) {
+    var pop = UI.popover(ancla, h("div.menu",
+      h("button", { onclick: function () { pop.cerrar(); elegirArchivo(function (f) { subir(f, p); }); } }, ic("subir", "sm"), "Reemplazar con otro Excel"),
+      h("button", { onclick: function () { pop.cerrar(); editarDatos(p); } }, ic("editar", "sm"), "Editar título y descripción"),
+      h("button.peligro", { onclick: function () { pop.cerrar(); borrar(p, alListo); } }, ic("basura", "sm"), "Eliminar")));
+  }
+
+  async function abrir(p) {
+    var cuerpo = h("div.pl-abierta", h("div.sk", { style: { height: "38px" } }), h("div.sk", { style: { height: "320px", marginTop: "12px" } }));
+    var dr = UI.drawer(p.titulo, [cuerpo], [
+      h("button.btn.ghost", { style: { color: "var(--bad)" }, onclick: function () { borrar(p, function () { dr.cerrar(); }); } }, ic("basura", "sm"), "Eliminar"),
+      h("div", { style: { flex: 1 } }),
+      h("button.btn", { onclick: function () { dr.cerrar(); elegirArchivo(function (f) { subir(f, p); }); } }, ic("subir", "sm"), "Reemplazar Excel")],
+      h("div.pl-ic.sm", ic("tabla", "sm")));
+    dr.nodo.classList.add("drawer-ancho");
+    try {
+      var full = await Datos.planilla(p.id);
+      var vis = Planillas.visor(full);
+      UI.reemplazar(cuerpo,
+        h("div.pl-meta", full.descripcion ? h("p", full.descripcion) : null,
+          h("div.pl-chips", h("span.pill", ic("reloj", "sm"), "Actualizada " + fechaHora(full.actualizado)), full.archivo ? h("span.pill", ic("tabla", "sm"), full.archivo) : null,
+            h("span.pill.acc", ic("ojo", "sm"), "Solo lectura para Consulta"))),
+        vis.el);
+    } catch (e) { UI.reemplazar(cuerpo, h("div.ayuda.err", UI.mensajeError(e))); }
+  }
+
+  A.subirPlanilla = function () { elegirArchivo(function (f) { subir(f, null); }); };
+
+  A.vistas.planillas = function (cont) {
+    var lista = h("div"), gente = h("div");
+    var arrastre = h("div.soltar", h("div", ic("subir", "xl"), h("b", "Soltá el Excel para publicarlo")));
+    UI.add(cont, h("div.scroll", h("div.pagina",
+      h("div.titulo-pag", h("div", h("h2", "Planillas"), h("p", "Información para el equipo de consulta. Vos la subís y la cambiás; ellos solo la ven.")), h("div.sp"),
+        h("button.btn.pri", { onclick: A.subirPlanilla }, ic("subir", "sm"), "Subir Excel")),
+      gente, lista)), arrastre);
+    // arrastrar y soltar un archivo en cualquier parte de la sección
+    var prof = 0;
+    cont.addEventListener("dragenter", function (e) { if (e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types, "Files") >= 0) { prof++; arrastre.classList.add("activo"); } });
+    cont.addEventListener("dragleave", function () { prof = Math.max(0, prof - 1); if (!prof) { arrastre.classList.remove("activo"); } });
+    cont.addEventListener("dragover", function (e) { e.preventDefault(); });
+    cont.addEventListener("drop", function (e) { e.preventDefault(); prof = 0; arrastre.classList.remove("activo"); var f = e.dataTransfer.files && e.dataTransfer.files[0]; if (f) { subir(f, null); } });
+
+    function pintarGente() {
+      var q = consultas();
+      UI.reemplazar(gente, q.length
+        ? h("div.pl-quien", h("span", ic("ojo", "sm"), "La ven (solo lectura):"), q.map(function (p) { return h("span.pl-persona" + (p.activo ? "" : ".off"), h("span.av.sm", { style: { "--c": p.color } }, UI.iniciales(p.nombre)), p.nombre); }))
+        : h("div.nota", ic("info", "sm"), h("div", h("b", "Nadie la ve todavía"),
+            h("span", "Agregá a la persona que tiene que ver estas planillas con el rol Consulta: entra con su email y ve solo esta información, sin poder editar."),
+            h("button.btn.sm", { style: { marginTop: "10px" }, onclick: function () { A.ir("equipo"); setTimeout(function () { A.nuevaPersona("consulta"); }, 60); } }, ic("ojo", "sm"), "Agregar persona de consulta"))));
+    }
+    async function cargar() {
+      UI.reemplazar(lista, h("div.grid-cards", [0, 1, 2].map(function () { return h("div.pl-card", h("div.sk", { style: { height: "18px", width: "60%" } }), h("div.sk", { style: { height: "12px", width: "85%", marginTop: "12px" } }), h("div.sk", { style: { height: "12px", width: "40%", marginTop: "18px" } })); })));
+      try {
+        var ps = await Datos.planillas();
+        if (!ps.length) {
+          UI.reemplazar(lista, h("button.zona-subir", { type: "button", onclick: A.subirPlanilla },
+            h("div.zs-ic", ic("subir", "xl")), h("b", "Arrastrá un Excel acá o tocá para elegirlo"), h("span", "Aceptamos .xlsx, .xls, .ods y .csv. Se ve igual que en Excel, con números y fechas en formato argentino.")));
+          return;
+        }
+        UI.reemplazar(lista, h("div.grid-cards", ps.map(function (p, i) {
+          var mas = h("button.btn.ghost.icon.sm", { "aria-label": "Opciones de " + p.titulo, onclick: function (e) { e.stopPropagation(); menu(p, mas); } }, ic("puntos", "sm"));
+          return h("article.pl-card", { tabindex: "0", style: { animation: "entra .35s var(--ease) both", animationDelay: Math.min(i, 10) * 30 + "ms" }, onclick: function () { abrir(p); }, onkeydown: function (e) { if (e.key === "Enter") { abrir(p); } } },
+            h("div.pl-card-t", h("div.pl-ic", ic("tabla")), h("div", { style: { minWidth: 0, flex: 1 } }, h("b", p.titulo), h("small", metaTxt(p))), mas),
+            p.descripcion ? h("p.pl-desc", p.descripcion) : null,
+            h("div.pl-pie", h("span", ic("reloj", "sm"), fechaHora(p.actualizado)), p.archivo ? h("span.mono", p.archivo) : null));
+        })));
+      } catch (e) { UI.reemplazar(lista, h("div.ayuda.err", UI.mensajeError(e))); }
+    }
+    pintarGente(); cargar();
+    return { actualizar: pintarGente };
   };
 })();
 
@@ -3340,6 +4086,92 @@ var R = (function () {
 
 ;
 /* =====================================================================
+   CONSULTA — pantalla de solo lectura: las planillas que comparte el
+   administrador. No ve paradas, clientes, montos ni recorridos.
+   ===================================================================== */
+var C = (function () {
+  "use strict";
+  var h = UI.h, ic = UI.ic;
+  var S = { perfil: null, lista: null, abierta: null, firma: "", visor: null, reloj: null };
+  var raiz, panelLista, panelVer, cuerpo;
+
+  function fechaHora(ts) { return ts ? UI.fechaCorta(new Date(ts).toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" })).slice(0, 5) + " · " + UI.horaDe(ts) : "—"; }
+  function firma(l) { return (l || []).map(function (p) { return p.id + p.actualizado; }).join("|"); }
+
+  async function iniciar(contenedor, perfil) {
+    S.perfil = perfil; raiz = contenedor;
+    var tema = h("button.btn.ghost.icon", { "aria-label": "Cambiar tema", onclick: function () {
+      var t = document.documentElement.dataset.theme === "light" ? "dark" : "light"; document.documentElement.dataset.theme = t;
+      try { localStorage.setItem("ruta-tema", t); } catch (e) {} } }, ic("luna"));
+    panelLista = h("section.cs-lista"); panelVer = h("section.cs-ver");
+    cuerpo = h("div.cs-cuerpo", panelLista, panelVer);
+    UI.reemplazar(raiz, h("div.cs",
+      h("header.rp-top.cs-top", h("span.av", { style: { "--c": perfil.color } }, UI.iniciales(perfil.nombre)),
+        h("div.t", h("b", "Hola, " + perfil.nombre.split(" ")[0]), h("small", h("span.pill.acc", { style: { height: "19px" } }, ic("candado", "sm"), "Solo lectura"))), tema,
+        h("button.btn.ghost.icon", { "aria-label": "Salir", onclick: async function () { if (await UI.confirmar("¿Cerrar sesión?", "Para volver vas a necesitar tu email y contraseña.", { si: "Salir" })) { await Datos.salir(); location.reload(); } } }, ic("salir"))),
+      cuerpo));
+    pintarLista(); pintarVacioVer();
+    await cargar(true);
+    S.reloj = setInterval(function () { if (!document.hidden) { cargar(false); } }, 60000);
+    document.addEventListener("visibilitychange", function () { if (!document.hidden) { cargar(false); } });
+  }
+
+  async function cargar(primera) {
+    try {
+      var l = await Datos.planillas();
+      var f = firma(l); if (!primera && f === S.firma) { return; }
+      var antes = S.lista || []; S.lista = l; S.firma = f;
+      pintarLista();
+      if (S.abierta) {
+        var a = l.find(function (x) { return x.id === S.abierta.id; });
+        if (!a) { UI.toast("El administrador quitó esa planilla", "info"); cerrarVer(); }
+        else if (a.actualizado !== S.abierta.actualizado) { UI.toast("«" + a.titulo + "» se actualizó", "info"); abrir(a, true); }
+      } else if (!primera && l.length > antes.length) { UI.toast("Hay una planilla nueva", "info"); }
+      if (primera && l.length === 1 && innerWidth >= 900) { abrir(l[0]); }
+    } catch (e) { if (primera) { UI.reemplazar(panelLista, h("div.vacio", h("div.ic", ic("alerta", "lg")), h("b", "No se pudo cargar"), h("span", UI.mensajeError(e)), h("button.btn", { onclick: function () { cargar(true); } }, ic("refrescar", "sm"), "Reintentar"))); } }
+  }
+
+  function pintarLista() {
+    var l = S.lista;
+    var cab = h("div.cs-cab", h("h2", "Planillas"), h("p", "Información compartida por el administrador."));
+    if (!l) { UI.reemplazar(panelLista, cab, [0, 1, 2].map(function () { return h("div.pl-card", h("div.sk", { style: { height: "16px", width: "65%" } }), h("div.sk", { style: { height: "12px", width: "40%", marginTop: "12px" } })); })); return; }
+    if (!l.length) { UI.reemplazar(panelLista, cab, h("div.vacio", { style: { paddingTop: "40px" } }, h("div.ic", ic("tabla", "lg")), h("b", "Todavía no hay planillas"), h("span", "Cuando el administrador comparta una, aparece acá automáticamente."))); return; }
+    UI.reemplazar(panelLista, cab, h("div.cs-items", l.map(function (p, i) {
+      return h("button.pl-card.cs-item" + (S.abierta && S.abierta.id === p.id ? ".sel" : ""), { type: "button", style: { animation: "entra .3s var(--ease) both", animationDelay: Math.min(i, 10) * 30 + "ms" }, onclick: function () { abrir(p); } },
+        h("div.pl-card-t", h("div.pl-ic", ic("tabla")), h("div", { style: { minWidth: 0, flex: 1, textAlign: "left" } }, h("b", p.titulo),
+          h("small", (p.n_hojas > 1 ? p.n_hojas + " hojas · " : "") + Number(p.filas || 0).toLocaleString("es-AR") + " filas · " + fechaHora(p.actualizado))), ic("der", "sm")),
+        p.descripcion ? h("p.pl-desc", { style: { textAlign: "left" } }, p.descripcion) : null);
+    })));
+  }
+  function pintarVacioVer() {
+    UI.reemplazar(panelVer, h("div.vacio.cs-vacio-ver", h("div.ic", ic("tabla", "lg")), h("b", "Elegí una planilla"), h("span", "Se abre acá, para ver y buscar. No se puede modificar.")));
+  }
+  function cerrarVer() { if (S.visor) { S.visor.destruir(); S.visor = null; } S.abierta = null; cuerpo.classList.remove("viendo"); pintarVacioVer(); pintarLista(); }
+
+  async function abrir(p, silencioso) {
+    S.abierta = p; cuerpo.classList.add("viendo"); pintarLista();
+    if (!silencioso) { UI.reemplazar(panelVer, h("div.cs-ver-h", h("div.sk", { style: { height: "22px", width: "50%" } })), h("div.sk", { style: { height: "360px", margin: "14px 0" } })); }
+    try {
+      var full = await Datos.planilla(p.id);
+      if (!S.abierta || S.abierta.id !== p.id) { return; }
+      S.abierta = full;
+      if (S.visor) { S.visor.destruir(); }
+      S.visor = Planillas.visor(full);
+      UI.reemplazar(panelVer,
+        h("div.cs-ver-h",
+          h("button.btn.ghost.icon.cs-volver", { "aria-label": "Volver a la lista", onclick: cerrarVer }, ic("izq")),
+          h("div", { style: { minWidth: 0, flex: 1 } }, h("h2", full.titulo), h("small", "Actualizada " + fechaHora(full.actualizado)))),
+        full.descripcion ? h("p.cs-desc", full.descripcion) : null,
+        S.visor.el);
+      if (innerWidth < 900) { scrollTo({ top: 0 }); }
+    } catch (e) { UI.reemplazar(panelVer, h("div.vacio", h("div.ic", ic("alerta", "lg")), h("b", "No se pudo abrir"), h("span", UI.mensajeError(e)))); }
+  }
+
+  return { iniciar: iniciar, S: S };
+})();
+
+;
+/* =====================================================================
    ARRANQUE — sesión, primer administrador, y a cada uno su pantalla.
    ===================================================================== */
 (function () {
@@ -3413,13 +4245,15 @@ var R = (function () {
   async function arrancar() {
     var perfil = await Datos.miPerfil().catch(function () { return null; });
     if (!perfil) {
-      UI.reemplazar(raiz, h("div.login-f", { style: { minHeight: "100dvh" } }, h("div.vacio", h("div.ic", ic("candado", "lg")), h("b", "Tu usuario no tiene acceso"), h("span", "Pedile al administrador que te dé de alta como repartidor."),
+      UI.reemplazar(raiz, h("div.login-f", { style: { minHeight: "100dvh" } }, h("div.vacio", h("div.ic", ic("candado", "lg")), h("b", "Tu usuario no tiene acceso"), h("span", "Pedile al administrador que te dé de alta en el equipo."),
         h("button.btn", { onclick: async function () { await Datos.salir(); location.reload(); } }, "Salir"))));
       return;
     }
     if (!perfil.activo) { UI.reemplazar(raiz, h("div.login-f", { style: { minHeight: "100dvh" } }, h("div.vacio", h("div.ic", ic("candado", "lg")), h("b", "Usuario desactivado"), h("span", "Hablá con el administrador."), h("button.btn", { onclick: async function () { await Datos.salir(); location.reload(); } }, "Salir")))); return; }
-    document.title = perfil.rol === "admin" ? "Ruta · Logística" : "Ruta · Mis recorridos";
-    if (perfil.rol === "admin") { await A.iniciar(raiz, perfil); } else { await R.iniciar(raiz, perfil); }
+    document.title = perfil.rol === "admin" ? "Ruta · Logística" : perfil.rol === "consulta" ? "Ruta · Planillas" : "Ruta · Mis recorridos";
+    if (perfil.rol === "admin") { await A.iniciar(raiz, perfil); }
+    else if (perfil.rol === "consulta") { await C.iniciar(raiz, perfil); }
+    else { await R.iniciar(raiz, perfil); }
   }
 
   (async function () {
