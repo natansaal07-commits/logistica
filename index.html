@@ -2132,7 +2132,7 @@ var A = (function () {
         var v = A.viajeDe(i.viaje_id), rep = v ? A.repDe(v.repartidor_id) : A.repDe(i.creado_por);
         alertas.appendChild(h("div.alerta.bad.glass", ic("alerta"), h("div.t", h("b", i.motivo + (rep ? " · " + rep.nombre : "")), h("span", (p ? p.cliente_nombre + " — " : "") + (i.nota || UI.hace(i.creado)))),
           p ? h("button.btn.sm", { onclick: function () { A.editorParada(p); } }, "Ver") : null,
-          rep && rep.telefono ? h("a.btn.sm", { href: "tel:" + rep.telefono }, ic("telefono", "sm")) : null,
+          rep && rep.telefono ? h("a.btn.sm", { href: "tel:" + rep.telefono, "aria-label": "Llamar a " + rep.nombre }, ic("telefono", "sm")) : null,
           h("button.btn.sm", { onclick: async function () { await Datos.resolverIncidente(i.id); i.resuelto = true; pintarAlertas(); A.refrescar(); UI.toast("Marcado como resuelto"); } }, ic("check", "sm"), "Resuelto")));
       });
       var excedidos = S.viajes.filter(function (v) { return v.estado !== "finalizado" && A.cargaViaje(v).usd > Motor.dec(A.tope()); });
@@ -2831,7 +2831,7 @@ var A = (function () {
     var dr = UI.drawer(c.nombre, [
       h("div", { style: { display: "flex", gap: "10px" } },
         h("button.btn.pri", { style: { flex: 1 }, onclick: function () { dr.cerrar(); A.editorParada(null, { cliente_id: c.id, cliente_nombre: c.nombre, direccion: c.direccion, detalle: c.detalle || "", telefono: c.telefono || "", lat: c.lat, lng: c.lng }); } }, ic("mas", "sm"), "Nueva parada para este cliente"),
-        c.telefono ? h("a.btn", { href: "tel:" + c.telefono }, ic("telefono", "sm")) : null),
+        c.telefono ? h("a.btn", { href: "tel:" + c.telefono, "aria-label": "Llamar a " + c.nombre }, ic("telefono", "sm")) : null),
       mini, f("nombre", "Nombre"), f("direccion", "Dirección"), h("div.g2", f("detalle", "Piso / depto"), f("telefono", "Teléfono")),
       h("div.campo", h("label", "Notas internas"), h("textarea.inp", { oninput: function (e) { d.notas = e.target.value; } }, d.notas || "")),
       h("div.campo", h("label", "Historial"), hist)
@@ -3381,7 +3381,7 @@ var R = (function () {
         try {
           if (modoAdmin) {
             var r = await Datos.crearAdmin(nombre.value.trim(), email.value, clave.value);
-            if (!r.session) { UI.reemplazar(form, h("div.vacio", h("div.ic", ic("mail", "lg")), h("b", "Revisá tu email"), h("span", "Te mandamos un enlace para confirmar la cuenta. Después, entrá con tu email y contraseña."), h("button.btn", { type: "button", onclick: function () { location.reload(); } }, "Ya confirmé"))); return; }
+            if (!r.session) { UI.reemplazar(form, h("div.vacio", h("div.ic", ic("mail", "lg")), h("b", "Revisá tu email"), h("span", "Mandamos un enlace a ", h("b", { style: { color: "var(--ink)" } }, email.value), " para confirmar la cuenta. Si no llega en un par de minutos, fijate en correo no deseado."), h("span", { style: { marginTop: "-4px" } }, "Después volvé acá y entrá con tu email y contraseña."), h("button.btn", { type: "button", onclick: function () { location.reload(); } }, ic("refrescar", "sm"), "Ya confirmé"))); return; }
             location.reload();
           } else { await Datos.entrar(email.value, clave.value); await arrancar(); }
         } catch (x) { err.textContent = UI.mensajeError(x); form.animate([{ transform: "translateX(0)" }, { transform: "translateX(-6px)" }, { transform: "translateX(6px)" }, { transform: "translateX(0)" }], { duration: 260 }); }
