@@ -369,6 +369,7 @@ select.inp{appearance:none;padding-right:34px;background-image:url("data:image/s
 .grupo{margin-bottom:22px}
 .grupo-h{display:flex;align-items:center;gap:10px;margin:0 0 8px;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.07em}
 .grupo-h::after{content:"";flex:1;height:1px;background:var(--line)}
+@media(max-width:820px){.grupo-h.desc span{display:none}}
 .lista{border-radius:var(--r-lg);background:var(--panel);border:1px solid var(--line);overflow:hidden}
 .item{display:grid;grid-template-columns:64px minmax(180px,1.2fr) minmax(150px,1fr) auto 120px 28px;gap:16px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .15s}
 .item:last-child{border-bottom:0}
@@ -384,6 +385,11 @@ select.inp{appearance:none;padding-right:34px;background-image:url("data:image/s
 .vacio .ic{width:56px;height:56px;border-radius:18px;display:grid;place-items:center;background:var(--surface-2);border:1px solid var(--line-2);color:var(--ink-2);margin-bottom:6px}
 .vacio b{color:var(--ink);font-size:15px}
 .grid-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.nota{display:flex;gap:12px;padding:14px 16px;border-radius:var(--r-lg);background:var(--accent-soft);border:1px solid color-mix(in oklab,var(--accent) 28%,transparent);margin-bottom:22px}
+.nota>svg{flex:none;margin-top:2px;color:var(--accent-2)}
+.nota b{display:block;font-size:13.5px;margin-bottom:3px;color:var(--ink)}
+.nota span{display:block;font-size:12.5px;color:var(--muted);line-height:1.55}
+:root[data-theme="light"] .nota>svg{color:var(--accent)}
 .cli{padding:16px;border-radius:var(--r-lg);background:var(--panel);border:1px solid var(--line);cursor:pointer;transition:border-color .2s,transform .2s var(--ease)}
 .cli:hover{border-color:var(--line-3);transform:translateY(-1px)}
 .cli .t{display:flex;align-items:center;gap:12px;margin-bottom:10px}
@@ -1850,7 +1856,7 @@ var A = (function () {
   var NAV = [
     { id: "vivo", t: "En vivo", i: "vivo", k: "1" }, { id: "planificar", t: "Planificar rutas", i: "magia", k: "2" },
     { id: "paradas", t: "Paradas", i: "lista", k: "3" }, { id: "clientes", t: "Clientes", i: "clientes", k: "4" },
-    { id: "equipo", t: "Repartidores", i: "moto", k: "5" }, { id: "ajustes", t: "Ajustes", i: "ajustes", k: "6" }
+    { id: "equipo", t: "Equipo", i: "equipo", k: "5" }, { id: "ajustes", t: "Ajustes", i: "ajustes", k: "6" }
   ];
   function montar(contenedor, perfil) {
     S.perfil = perfil; raiz = contenedor;
@@ -1976,7 +1982,8 @@ var A = (function () {
       { t: "Planificar rutas", s: "Calcular combinaciones del día", i: "magia", k: "2", f: function () { ir("planificar"); } },
       { t: "Ver en vivo", s: "Mapa y recorridos", i: "vivo", k: "1", f: function () { ir("vivo"); } },
       { t: "Ir a hoy", s: UI.fechaSub(UI.hoyISO()), i: "reloj", f: function () { cambiarFecha(UI.hoyISO()); } },
-      { t: "Agregar repartidor", s: "Crear un usuario para el celular", i: "moto", f: function () { ir("equipo"); setTimeout(A.nuevoRepartidor, 60); } },
+      { t: "Agregar repartidor", s: "Crear un usuario para el celular", i: "moto", f: function () { ir("equipo"); setTimeout(function () { A.nuevaPersona("repartidor"); }, 60); } },
+      { t: "Agregar administrador", s: "Dar acceso total a otra persona", i: "escudo", f: function () { ir("equipo"); setTimeout(function () { A.nuevaPersona("admin"); }, 60); } },
       { t: "Actualizar cotización", s: "dolarapi + bluelytics", i: "refrescar", f: function () { cargarCot(); } }
     ];
     function pintar() {
@@ -2872,80 +2879,154 @@ var A = (function () {
     return { actualizar: pintar };
   };
 
-  /* ---------------- Repartidores ---------------- */
-  A.nuevoRepartidor = function () {
-    var usados = A.repartidores().map(function (r) { return r.color.toLowerCase(); });
-    var d = { nombre: "", email: "", clave: "", telefono: "", color: A.PALETA.find(function (c) { return usados.indexOf(c) < 0; }) || A.PALETA[0] };
+  /* ---------------- Equipo: administradores y repartidores ---------------- */
+  var ROLES = {
+    admin: { t: "Administrador", i: "escudo", d: "Ve y maneja todo: paradas, recorridos, clientes y ajustes." },
+    repartidor: { t: "Repartidor", i: "moto", d: "Entra desde el celular y ve solo los recorridos que le asignan." }
+  };
+  function pillRol(rol) { var r = ROLES[rol] || ROLES.repartidor; return h("span.pill" + (rol === "admin" ? ".acc" : ""), ic(r.i, "sm"), r.t); }
+  A.pillRol = pillRol;
+  function personas() { return S.perfiles.slice().sort(function (a, b) { return (a.rol === b.rol ? 0 : a.rol === "admin" ? -1 : 1) || a.nombre.localeCompare(b.nombre, "es"); }); }
+  function otrosAdmins(id) { return S.perfiles.filter(function (p) { return p.rol === "admin" && p.activo && p.id !== id; }); }
+  function soyYo(p) { return S.perfil && p.id === S.perfil.id; }
+  function selectorRol(valor, alCambiar, bloqueado) {
+    var seg = h("div.seg", { style: { display: "flex", width: "100%" } });
+    function pintar() {
+      UI.reemplazar(seg, ["repartidor", "admin"].map(function (k) {
+        return h("button", { type: "button", disabled: !!bloqueado, "aria-pressed": valor === k ? "true" : "false",
+          style: { flex: 1, justifyContent: "center", cursor: bloqueado ? "not-allowed" : "pointer" },
+          onclick: function () { if (bloqueado) { return; } valor = k; pintar(); alCambiar(k); } }, ic(ROLES[k].i, "sm"), ROLES[k].t);
+      }));
+    }
+    pintar();
+    return seg;
+  }
+  function selectorColor(d) {
     var colores = h("div", { style: { display: "flex", gap: "8px", flexWrap: "wrap" } });
-    function pintarC() { UI.reemplazar(colores, A.PALETA.map(function (c) { return h("button", { type: "button", "aria-label": "Color", onclick: function () { d.color = c; pintarC(); },
+    var lista = A.PALETA.indexOf((d.color || "").toLowerCase()) >= 0 || A.PALETA.indexOf(d.color) >= 0 ? A.PALETA : [d.color].concat(A.PALETA);
+    function pintar() { UI.reemplazar(colores, lista.map(function (c) { return h("button", { type: "button", "aria-label": "Color " + c, "aria-pressed": d.color === c ? "true" : "false", onclick: function () { d.color = c; pintar(); },
       style: { width: "30px", height: "30px", borderRadius: "50%", background: c, boxShadow: d.color === c ? "0 0 0 3px var(--panel),0 0 0 5px " + c : "none", transition: "box-shadow .2s" } }); })); }
-    pintarC();
+    pintar();
+    return colores;
+  }
+
+  A.nuevaPersona = function (rolInicial) {
+    var usados = S.perfiles.map(function (r) { return (r.color || "").toLowerCase(); });
+    var d = { nombre: "", email: "", clave: "", telefono: "", rol: rolInicial === "admin" ? "admin" : "repartidor",
+      color: A.PALETA.find(function (c) { return usados.indexOf(c) < 0; }) || A.PALETA[0] };
+    var ayudaRol = h("div.ayuda", ROLES[d.rol].d);
     var gen = function () { var a = "abcdefghjkmnpqrstuvwxyz23456789", s = ""; var r = new Uint32Array(10); crypto.getRandomValues(r); r.forEach(function (x) { s += a[x % a.length]; }); return s; };
     var inpClave = h("input.inp.mono", { value: "", oninput: function (e) { d.clave = e.target.value; } });
-    var btn = h("button.btn.pri", { onclick: crear }, "Crear repartidor");
-    var m = UI.modal([h("div.mb", h("h3", "Nuevo repartidor"), h("p", "Entra desde el celular con este email y contraseña. Solo ve sus recorridos."),
+    var btn = h("button.btn.pri", { onclick: crear }, ic("check", "sm"), "Crear");
+    var m = UI.modal([h("div.mb", h("h3", "Agregar a alguien al equipo"), h("p", "Entra con este email y contraseña. Podés cambiarle el rol cuando quieras."),
       h("div", { style: { display: "flex", flexDirection: "column", gap: "12px", marginTop: "16px" } },
+        h("div.campo", h("label", "Rol"), selectorRol(d.rol, function (k) { d.rol = k; UI.reemplazar(ayudaRol, ROLES[k].d); }), ayudaRol),
         h("div.campo", h("label", "Nombre"), h("input.inp", { autofocus: true, oninput: function (e) { d.nombre = e.target.value; } })),
         h("div.campo", h("label", "Email"), h("input.inp", { type: "email", autocomplete: "off", oninput: function (e) { d.email = e.target.value; } })),
         h("div.campo", h("label", "Contraseña"), h("div", { style: { display: "flex", gap: "8px" } }, inpClave, h("button.btn", { type: "button", onclick: function () { d.clave = gen(); inpClave.value = d.clave; } }, "Generar")), h("div.ayuda", "Mínimo 8 caracteres. Pasásela por un medio seguro.")),
         h("div.campo", h("label", "Teléfono (para llamarlo)"), h("input.inp", { type: "tel", oninput: function (e) { d.telefono = e.target.value; } })),
-        h("div.campo", h("label", "Color en el mapa"), colores))),
+        h("div.campo", h("label", "Color en el mapa"), selectorColor(d)))),
       h("div.mp", h("button.btn.ghost", { onclick: function () { m.cerrar(); } }, "Cancelar"), btn)]);
     async function crear() {
+      if (!d.nombre.trim()) { UI.toast("Falta el nombre", "bad"); return; }
       await UI.conCarga(btn, async function () {
-        try { await Datos.crearRepartidor(d); m.cerrar(); UI.toast(d.nombre + " ya puede entrar desde su celular"); await A.cargarBase(); if (A.S.vista === "equipo") { A.ir("equipo"); } }
+        try { await Datos.crearRepartidor(d); m.cerrar(); UI.toast(d.nombre.trim() + " ya puede entrar como " + ROLES[d.rol].t.toLowerCase()); await A.cargarBase(); if (S.vista === "equipo") { A.ir("equipo"); } }
         catch (e) { UI.toast(UI.mensajeError(e), "bad"); }
       });
     }
   };
-  function editarRep(r) {
-    var d = { nombre: r.nombre, telefono: r.telefono || "", color: r.color, activo: r.activo };
-    var colores = h("div", { style: { display: "flex", gap: "8px", flexWrap: "wrap" } });
-    function pintarC() { UI.reemplazar(colores, A.PALETA.map(function (c) { return h("button", { type: "button", onclick: function () { d.color = c; pintarC(); }, style: { width: "30px", height: "30px", borderRadius: "50%", background: c, boxShadow: d.color === c ? "0 0 0 3px var(--panel),0 0 0 5px " + c : "none" } }); })); }
-    pintarC();
-    var sw = h("button.switch", { role: "switch", "aria-checked": d.activo ? "true" : "false", onclick: function () { d.activo = !d.activo; sw.setAttribute("aria-checked", d.activo ? "true" : "false"); } });
-    var clave = h("input.inp.mono", { placeholder: "Nueva contraseña (opcional)" });
-    var btn = h("button.btn.pri", { onclick: guardar }, "Guardar");
-    var m = UI.modal([h("div.mb", h("h3", r.nombre), h("div", { style: { display: "flex", flexDirection: "column", gap: "12px", marginTop: "14px" } },
-      h("div.campo", h("label", "Nombre"), h("input.inp", { value: d.nombre, oninput: function (e) { d.nombre = e.target.value; } })),
-      h("div.campo", h("label", "Teléfono"), h("input.inp", { value: d.telefono, oninput: function (e) { d.telefono = e.target.value; } })),
-      h("div.campo", h("label", "Color"), colores),
-      h("div.campo", h("label", "Cambiar contraseña"), clave),
-      h("label", { style: { display: "flex", alignItems: "center", gap: "12px", fontWeight: 550 } }, sw, "Activo (si lo desactivás, no puede entrar a ver recorridos)"))),
+  A.nuevoRepartidor = function () { A.nuevaPersona("repartidor"); };
+
+  function editarPersona(r) {
+    var d = { nombre: r.nombre, telefono: r.telefono || "", color: r.color, activo: r.activo, rol: r.rol };
+    var yo = soyYo(r), ultimo = r.rol === "admin" && r.activo && !otrosAdmins(r.id).length;
+    var clave = h("input.inp.mono", { placeholder: "Nueva contraseña (opcional)", autocomplete: "new-password" });
+    var sw = h("button.switch", { role: "switch", disabled: ultimo, "aria-checked": d.activo ? "true" : "false", onclick: function () { if (ultimo) { return; } d.activo = !d.activo; sw.setAttribute("aria-checked", d.activo ? "true" : "false"); } });
+    var ayudaRol = h("div.ayuda", ultimo
+      ? "Es el único administrador activo, así que no puede cambiar de rol ni desactivarse. Para traspasar la administración, primero dale el rol de administrador a otra persona."
+      : ROLES[d.rol].d);
+    var btn = h("button.btn.pri", { onclick: guardar }, ic("check", "sm"), "Guardar");
+    var m = UI.modal([h("div.mb",
+      h("div", { style: { display: "flex", alignItems: "center", gap: "12px" } }, h("span.av.lg", { style: { "--c": r.color } }, UI.iniciales(r.nombre)),
+        h("div", h("h3", { style: { margin: 0 } }, r.nombre), h("div", { style: { marginTop: "6px", display: "flex", gap: "6px" } }, pillRol(r.rol), yo ? h("span.pill", "Sos vos") : null))),
+      h("div", { style: { display: "flex", flexDirection: "column", gap: "12px", marginTop: "16px" } },
+        h("div.campo", h("label", "Rol"), selectorRol(d.rol, function (k) { d.rol = k; UI.reemplazar(ayudaRol, ROLES[k].d); }, ultimo), ayudaRol),
+        h("div.campo", h("label", "Nombre"), h("input.inp", { value: d.nombre, oninput: function (e) { d.nombre = e.target.value; } })),
+        h("div.campo", h("label", "Teléfono"), h("input.inp", { type: "tel", value: d.telefono, oninput: function (e) { d.telefono = e.target.value; } })),
+        h("div.campo", h("label", "Color en el mapa"), selectorColor(d)),
+        h("div.campo", h("label", "Cambiar contraseña"), clave, h("div.ayuda", "Dejalo vacío si no querés cambiarla.")),
+        h("label", { style: { display: "flex", alignItems: "center", gap: "12px", fontWeight: 550, opacity: ultimo ? .55 : 1 } }, sw, "Activo (si lo desactivás, no puede entrar)"))),
       h("div.mp", h("button.btn.ghost", { onclick: function () { m.cerrar(); } }, "Cancelar"), btn)]);
     async function guardar() {
+      if (!d.nombre.trim()) { UI.toast("Falta el nombre", "bad"); return; }
+      var meVoy = yo && (d.rol !== "admin" || !d.activo);
+      if (meVoy && !(await UI.confirmar(d.activo ? "¿Dejás de ser administrador?" : "¿Desactivás tu propia cuenta?",
+        d.activo ? "Vas a pasar a ser repartidor: perdés el acceso a paradas, clientes y ajustes. Otro administrador puede devolvértelo." : "Vas a salir del sistema. Solo otro administrador puede volver a activarte.",
+        { si: "Sí, confirmar", peligro: true }))) { return; }
       await UI.conCarga(btn, async function () {
         try {
-          await Datos.guardarPerfil(r.id, { nombre: d.nombre.trim() || r.nombre, telefono: d.telefono || null, color: d.color, activo: d.activo });
+          await Datos.guardarPerfil(r.id, { nombre: d.nombre.trim(), telefono: d.telefono.trim() || null, color: d.color, activo: d.activo, rol: d.rol });
           if (clave.value) { await Datos.cambiarClave(r.id, clave.value); }
-          m.cerrar(); UI.toast("Repartidor actualizado"); await A.cargarBase(); A.ir("equipo");
+          m.cerrar();
+          if (meVoy) { UI.toast("Listo. Recargando…"); setTimeout(function () { location.reload(); }, 900); return; }
+          UI.toast(d.nombre.trim() + " actualizado"); await A.cargarBase(); A.ir("equipo");
         } catch (e) { UI.toast(UI.mensajeError(e), "bad"); }
       });
     }
   }
+
   A.vistas.equipo = function (cont) {
-    var grid = h("div.grid-cards");
+    var aviso = h("div"), grupos = h("div", { style: { display: "flex", flexDirection: "column", gap: "26px" } });
     UI.add(cont, h("div.scroll", h("div.pagina",
-      h("div.titulo-pag", h("div", h("h2", "Repartidores"), h("p", "Cada uno entra desde su celular y ve solo sus recorridos del día.")), h("div.sp"),
-        h("button.btn.pri", { onclick: A.nuevoRepartidor }, ic("mas", "sm"), "Agregar repartidor")), grid)));
+      h("div.titulo-pag", h("div", h("h2", "Equipo"), h("p", "Quién entra al sistema y con qué permisos.")), h("div.sp"),
+        h("button.btn.pri", { onclick: function () { A.nuevaPersona("repartidor"); } }, ic("mas", "sm"), "Agregar persona")),
+      aviso, grupos)));
+    function tarjeta(r) {
+      var esAdmin = r.rol === "admin";
+      var vs = S.viajes.filter(function (v) { return v.repartidor_id === r.id; });
+      var ids = vs.map(function (v) { return v.id; });
+      var ps = S.paradas.filter(function (p) { return ids.indexOf(p.viaje_id) >= 0; });
+      var hechas = ps.filter(function (p) { return p.estado === "completada"; }).length;
+      var enCurso = vs.some(function (v) { return v.estado === "en_curso"; });
+      var u = S.ubic.find(function (x) { return x.repartidor_id === r.id; });
+      var estado = !r.activo ? h("span.pill.bad", "Desactivado")
+        : esAdmin ? h("span.pill.acc", ic("escudo", "sm"), "Acceso total")
+        : enCurso ? h("span.pill.acc.vivo", h("span.dot"), "En la calle")
+        : vs.length ? h("span.pill.info", "Recorrido asignado") : h("span.pill", "Libre");
+      return h("article.rep-card", { style: { "--c": r.color, opacity: r.activo ? 1 : .6 } },
+        h("div.t", h("span.av.lg", { style: { "--c": r.color } }, UI.iniciales(r.nombre)),
+          h("div", { style: { flex: 1, minWidth: 0 } },
+            h("b", { style: { fontSize: "15px", display: "flex", alignItems: "center", gap: "8px" } }, h("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, r.nombre), soyYo(r) ? h("span.pill", "Vos") : null),
+            h("div", { style: { fontSize: "12.5px", color: "var(--muted)", display: "flex", alignItems: "center", gap: "6px", marginTop: "5px", flexWrap: "wrap" } },
+              estado, r.activo && !esAdmin && enCurso && u ? h("span", "GPS " + UI.hace(u.en)) : null)),
+          h("button.btn.ghost.icon.sm", { "aria-label": "Editar a " + r.nombre, onclick: function () { editarPersona(r); } }, ic("editar", "sm"))),
+        esAdmin
+          ? h("div.st", { style: { gridTemplateColumns: "1fr 1fr" } },
+              h("div", h("small", "En el equipo desde"), h("b", { style: { fontSize: "13px", fontFamily: "var(--font)" } }, r.creado ? UI.fechaCorta(r.creado.slice(0, 10)) : "—")),
+              r.telefono ? h("a.btn", { href: "tel:" + r.telefono, style: { height: "auto", flexDirection: "column", gap: "2px" } }, ic("telefono", "sm"), h("small", { style: { color: "var(--ink-2)" } }, "Llamar")) : h("div", h("small", "Teléfono"), h("b", { style: { fontSize: "13px", color: "var(--faint)" } }, "—")))
+          : h("div.st", h("div", h("small", "Paradas"), h("b", String(ps.length))), h("div", h("small", "Completadas"), h("b", String(hechas))),
+              r.telefono ? h("a.btn", { href: "tel:" + r.telefono, style: { height: "auto", flexDirection: "column", gap: "2px" } }, ic("telefono", "sm"), h("small", { style: { color: "var(--ink-2)" } }, "Llamar")) : h("div", h("small", "Teléfono"), h("b", { style: { fontSize: "13px", color: "var(--faint)" } }, "—"))));
+    }
     function pintar() {
-      UI.limpiar(grid);
-      var reps = A.repartidores();
-      if (!reps.length) { grid.appendChild(h("div.vacio", { style: { gridColumn: "1/-1" } }, h("div.ic", ic("moto", "lg")), h("b", "Sin repartidores"), h("span", "Agregá al primero para poder asignarle recorridos."), h("button.btn.pri", { onclick: A.nuevoRepartidor }, ic("mas", "sm"), "Agregar repartidor"))); return; }
-      reps.forEach(function (r) {
-        var vs = S.viajes.filter(function (v) { return v.repartidor_id === r.id; });
-        var ids = vs.map(function (v) { return v.id; });
-        var ps = S.paradas.filter(function (p) { return ids.indexOf(p.viaje_id) >= 0; });
-        var hechas = ps.filter(function (p) { return p.estado === "completada"; }).length;
-        var enCurso = vs.some(function (v) { return v.estado === "en_curso"; });
-        var u = S.ubic.find(function (x) { return x.repartidor_id === r.id; });
-        grid.appendChild(h("article.rep-card", { style: { "--c": r.color, opacity: r.activo ? 1 : .55 } },
-          h("div.t", h("span.av.lg", { style: { "--c": r.color } }, UI.iniciales(r.nombre)), h("div", { style: { flex: 1, minWidth: 0 } }, h("b", { style: { fontSize: "15px" } }, r.nombre),
-            h("div", { style: { fontSize: "12.5px", color: "var(--muted)", display: "flex", alignItems: "center", gap: "6px", marginTop: "3px", whiteSpace: "nowrap" } },
-              !r.activo ? "Desactivado" : enCurso ? [h("span.pill.acc.vivo", h("span.dot"), "En la calle"), u ? h("span", "GPS " + UI.hace(u.en)) : null] : vs.length ? h("span.pill.info", "Recorrido asignado") : h("span.pill", "Libre"))),
-            h("button.btn.ghost.icon.sm", { "aria-label": "Editar", onclick: function () { editarRep(r); } }, ic("editar", "sm"))),
-          h("div.st", h("div", h("small", "Paradas"), h("b", String(ps.length))), h("div", h("small", "Completadas"), h("b", String(hechas))),
-            r.telefono ? h("a.btn", { href: "tel:" + r.telefono, style: { height: "auto", flexDirection: "column", gap: "2px" } }, ic("telefono", "sm"), h("small", { style: { color: "var(--ink-2)" } }, "Llamar")) : h("div", h("small", "Teléfono"), h("b", { style: { fontSize: "13px", color: "var(--faint)" } }, "—")))));
+      var todas = personas();
+      var admins = todas.filter(function (p) { return p.rol === "admin"; });
+      var reps = todas.filter(function (p) { return p.rol === "repartidor"; });
+      UI.limpiar(aviso);
+      if (admins.filter(function (p) { return p.activo; }).length < 2) {
+        aviso.appendChild(h("div.nota", ic("info", "sm"), h("div",
+          h("b", "Sos el único administrador"),
+          h("span", "Para que administre otra persona: agregala con el rol Administrador, y después cambiá tu propio rol a Repartidor o desactivá tu cuenta. El sistema no te deja quedarte sin ningún administrador activo."),
+          h("button.btn.sm", { style: { marginTop: "10px" }, onclick: function () { A.nuevaPersona("admin"); } }, ic("escudo", "sm"), "Agregar un administrador"))));
+      }
+      UI.limpiar(grupos);
+      if (!todas.length) { grupos.appendChild(h("div.vacio", h("div.ic", ic("equipo", "lg")), h("b", "Todavía no hay nadie más"), h("span", "Agregá a las personas que van a usar el sistema."), h("button.btn.pri", { onclick: function () { A.nuevaPersona("repartidor"); } }, ic("mas", "sm"), "Agregar persona"))); return; }
+      [["Administradores", admins, "Ven y manejan todo el sistema.", "admin"], ["Repartidores", reps, "Entran desde el celular y ven solo sus recorridos.", "repartidor"]].forEach(function (g) {
+        grupos.appendChild(h("section",
+          h("div.grupo-h.desc", { style: { marginBottom: "12px" } }, g[0], h("span", { style: { fontWeight: 500, textTransform: "none", letterSpacing: 0 } }, g[2])),
+          g[1].length ? h("div.grid-cards", g[1].map(tarjeta))
+            : h("div.vacio", { style: { padding: "26px" } }, h("div.ic", ic(ROLES[g[3]].i, "lg")), h("b", g[3] === "admin" ? "Ningún otro administrador" : "Sin repartidores"),
+                h("span", g[3] === "admin" ? "Agregá a quien va a administrar el sistema." : "Agregá al primero para poder asignarle recorridos."),
+                h("button.btn", { onclick: function () { A.nuevaPersona(g[3]); } }, ic("mas", "sm"), "Agregar " + (g[3] === "admin" ? "administrador" : "repartidor")))));
       });
     }
     pintar();
@@ -3308,7 +3389,7 @@ var R = (function () {
     } },
       h("div.marca-f", { style: { alignItems: "center", gap: "10px", marginBottom: "18px" } }, h("div.logo", { style: { margin: 0 } }, UI.svgLogo()), h("b", { style: { fontSize: "17px", letterSpacing: "-.01em" } }, "Ruta")),
       h("h1", modoAdmin ? "Configurá tu cuenta" : "Bienvenido"),
-      h("p.sub", modoAdmin ? "Es el primer ingreso: esta cuenta va a ser la del administrador." : "Entrá con el email y la contraseña que te dieron."),
+      h("p.sub", modoAdmin ? "Es el primer ingreso, así que esta cuenta arranca como administradora. Después podés sumar al resto del equipo y pasarle la administración a quien corresponda." : "Entrá con el email y la contraseña que te dieron."),
       modoAdmin ? h("div.campo", h("label", "Nombre"), nombre) : null,
       h("div.campo", h("label", "Email"), h("div.inp-ico", ic("mail", "sm"), email)),
       h("div.campo", h("label", "Contraseña"), h("div.inp-ico", { style: { position: "relative" } }, ic("candado", "sm"), clave, ver)),
