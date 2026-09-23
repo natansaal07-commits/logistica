@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Ruta">
 <meta name="robots" content="noindex,nofollow">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://tiles.openfreemap.org; worker-src blob:; child-src blob:; connect-src 'self' https://hgwnclqscytyozqkccro.supabase.co wss://hgwnclqscytyozqkccro.supabase.co https://cdn.jsdelivr.net https://tiles.openfreemap.org https://dolarapi.com https://api.bluelytics.com.ar https://photon.komoot.io https://router.project-osrm.org https://servicios.usig.buenosaires.gob.ar https://apis.datos.gob.ar; base-uri 'none'; form-action 'self'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-YtMomPqYma0Vt/MLiIc0RKYBeCCqdA6m9BHXLrMvj60=' https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://tiles.openfreemap.org; worker-src blob:; child-src blob:; connect-src 'self' https://hgwnclqscytyozqkccro.supabase.co wss://hgwnclqscytyozqkccro.supabase.co https://tiles.openfreemap.org https://dolarapi.com https://api.bluelytics.com.ar https://photon.komoot.io https://router.project-osrm.org https://servicios.usig.buenosaires.gob.ar https://apis.datos.gob.ar https://nominatim.openstreetmap.org; base-uri 'none'; form-action 'self'; object-src 'none'">
 <meta name="description" content="Logística de traslados: rutas, repartidores y seguimiento en vivo.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icono.svg" type="image/svg+xml">
@@ -20,7 +20,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://tiles.openfreemap.org" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400..800&family=Geist+Mono:wght@400..700&display=swap">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css" integrity="sha384-uTttxo/aOKbdE5RlD/SPzSDoDmNvGlUYPjONi2MN/b7c9HPSvW07OIuyP7uL6jxK" crossorigin="anonymous">
 <title>Ruta · Logística</title>
 <style>/* =====================================================================
    RUTA · Sistema de logística — sistema visual
@@ -788,9 +788,9 @@ select.inp{appearance:none;padding-right:34px;background-image:url("data:image/s
 </head>
 <body>
 <div id="app"></div>
-<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js" integrity="sha384-5+cfbwT0iiub6VsQAdn6yz16nr6sDiQoHx6tm4O8OVYXHYOxcffFmCJBL0dgdvGp" crossorigin="anonymous"></script>
 
-<script>window.__MOTOR_SRC__="/* =====================================================================\n   MOTOR — dinero exacto, cotizaciones, tiempos y optimizador de rutas.\n   Sin dependencias. Corre en el navegador y en Node (pruebas).\n   ===================================================================== */\n(function (root) {\n  \"use strict\";\n\n  /* ---------------- Dinero exacto (BigInt, nunca float) ---------------- */\n  var ESC = 10n;                    // escala interna: 10 decimales\n  var F = 10n ** ESC;\n  var MONEDAS = {\n    USD: { dec: 2, simbolo: \"US$\", nombre: \"Dólares\" },\n    ARS: { dec: 2, simbolo: \"$\", nombre: \"Pesos\" },\n    EUR: { dec: 2, simbolo: \"€\", nombre: \"Euros\" }\n  };\n\n  // \"15000.50\" (canónico, como viene de la base) → BigInt escalado\n  function dec(str) {\n    str = String(str).trim();\n    if (!/^-?\\d+(\\.\\d+)?$/.test(str)) { throw new Error(\"Número inválido: \" + str); }\n    var neg = str[0] === \"-\"; if (neg) { str = str.slice(1); }\n    var p = str.split(\".\"), ent = p[0], fr = (p[1] || \"\");\n    if (fr.length > Number(ESC)) {         // más precisión que la escala: se trunca hacia arriba\n      var extra = fr.slice(Number(ESC)); fr = fr.slice(0, Number(ESC));\n      var v0 = BigInt(ent) * F + BigInt(fr);\n      if (/[1-9]/.test(extra)) { v0 += 1n; }\n      return neg ? -v0 : v0;\n    }\n    var v = BigInt(ent) * F + BigInt((fr + \"0\".repeat(Number(ESC))).slice(0, Number(ESC)));\n    return neg ? -v : v;\n  }\n  function mulCeil(a, b) { var p = a * b; var q = p / F; if (p % F !== 0n && p > 0n) { q += 1n; } return q; }\n  function divCeil(a, b) { var p = a * F; var q = p / b; if (p % b !== 0n && (p > 0n) === (b > 0n)) { q += 1n; } return q; }\n  function aNumero(a) { return Number(a) / Number(F); }   // SOLO para dibujar/ordenar, nunca para guardar\n  function aCanonico(a, decs) {\n    var neg = a < 0n; if (neg) { a = -a; }\n    var s = F / (10n ** BigInt(decs)); var q = a / s; if (a % s !== 0n) { q += 1n; }  // hacia arriba (conservador)\n    var d = 10n ** BigInt(decs); var ent = q / d, fr = q % d;\n    return (neg ? \"-\" : \"\") + ent.toString() + (decs ? \".\" + fr.toString().padStart(decs, \"0\") : \"\");\n  }\n\n  // Entrada del usuario en formato argentino: miles con punto, decimales con coma.\n  // Nunca redondea: si sobran decimales, error. Si es ambiguo, error explicativo.\n  function parsearImporte(txt, moneda) {\n    var m = MONEDAS[moneda]; if (!m) { return { error: \"Elegí la moneda\" }; }\n    var s = String(txt || \"\").replace(/\\s| /g, \"\").replace(/^(US\\$|\\$|€|USD|ARS|EUR)/i, \"\");\n    if (!s) { return { error: \"Falta el importe\" }; }\n    if (!/^[\\d.,]+$/.test(s)) { return { error: \"Solo números, puntos y coma\" }; }\n    var ent, fr = \"\";\n    if (s.indexOf(\",\") >= 0) {\n      if (s.split(\",\").length > 2) { return { error: \"Hay más de una coma\" }; }\n      var p = s.split(\",\"); ent = p[0]; fr = p[1];\n      if (!fr) { return { error: \"Faltan los decimales después de la coma\" }; }\n    } else { ent = s; }\n    if (ent.indexOf(\".\") >= 0) {\n      if (!/^\\d{1,3}(\\.\\d{3})+$/.test(ent)) { return { error: \"El punto separa miles. Para decimales usá coma\" }; }\n      ent = ent.replace(/\\./g, \"\");\n    }\n    if (!/^\\d+$/.test(ent)) { return { error: \"Importe inválido\" }; }\n    if (fr.length > m.dec) { return { error: moneda + \" admite \" + m.dec + \" decimales. Corregí el importe\" }; }\n    ent = ent.replace(/^0+(?=\\d)/, \"\");\n    var canon = ent + (fr ? \".\" + fr : \"\");\n    if (dec(canon) <= 0n) { return { error: \"El importe tiene que ser mayor que cero\" }; }\n    if (ent.length > 13) { return { error: \"Importe fuera de rango\" }; }\n    return { valor: canon };\n  }\n\n  // \"15000.5\" → \"15.000,50\"\n  function fmtNum(canon, decs) {\n    var v = typeof canon === \"bigint\" ? canon : dec(canon);\n    var s = aCanonico(v, decs == null ? 2 : decs);\n    var neg = s[0] === \"-\"; if (neg) { s = s.slice(1); }\n    var p = s.split(\".\"), ent = p[0].replace(/\\B(?=(\\d{3})+(?!\\d))/g, \".\");\n    return (neg ? \"−\" : \"\") + ent + (p[1] ? \",\" + p[1] : \"\");\n  }\n  function fmtDinero(canon, moneda, opts) {\n    var m = MONEDAS[moneda] || { dec: 2, simbolo: moneda };\n    var decs = m.dec;\n    if (opts && opts.compacto) {\n      var v = typeof canon === \"bigint\" ? canon : dec(canon);\n      if (v % F === 0n) { decs = 0; }\n    }\n    return m.simbolo + \" \" + fmtNum(canon, decs);\n  }\n  function fmtCompacto(big) {             // USD 18,4k (para gráficos)\n    var n = aNumero(big);\n    function d1(x) { var t = x.toFixed(x >= 100 ? 0 : 1); return t.replace(/\\.0$/, \"\").replace(\".\", \",\"); }\n    if (Math.abs(n) >= 1e6) { return d1(n / 1e6) + \"M\"; }\n    if (Math.abs(n) >= 1e3) { return d1(n / 1e3) + \"k\"; }\n    return String(Math.round(n));\n  }\n\n  /* ---------------- Cotizaciones ---------------- */\n  // tasas = { tipo, lado, usd:{compra,venta}, eur:{compra,venta} } en ARS, strings canónicos\n  function numStr(x) {\n    if (x == null || x === \"\") { return null; }\n    var s = typeof x === \"number\" ? x.toString() : String(x);\n    if (/e/i.test(s)) { s = Number(s).toFixed(6); }\n    return /^\\d+(\\.\\d+)?$/.test(s) ? s : null;\n  }\n  function aUSD(importe, moneda, tasas) {        // → BigInt escalado (USD), redondeo hacia arriba\n    var v = dec(importe);\n    if (moneda === \"USD\") { return v; }\n    if (!tasas) { return null; }\n    var lado = tasas.lado || \"compra\";\n    var usd = tasas.usd && tasas.usd[lado]; if (!usd) { return null; }\n    if (moneda === \"ARS\") { return divCeil(v, dec(usd)); }\n    if (moneda === \"EUR\") {\n      var eur = tasas.eur && tasas.eur[lado]; if (!eur) { return null; }\n      return divCeil(mulCeil(v, dec(eur)), dec(usd));\n    }\n    return null;\n  }\n\n  function normalizarCotizaciones(dolarapi, bluelytics, eurapi) {\n    var out = { tomadaEn: new Date().toISOString(), fuentes: [], tipos: {} };\n    var tipos = [\"blue\", \"oficial\", \"bolsa\"];\n    tipos.forEach(function (t) { out.tipos[t] = { usd: {}, eur: {}, detalle: [] }; });\n    if (Array.isArray(dolarapi)) {\n      out.fuentes.push(\"dolarapi.com\");\n      dolarapi.forEach(function (d) {\n        var t = d.casa; if (!out.tipos[t]) { return; }\n        var c = numStr(d.compra), v = numStr(d.venta);\n        if (c) { out.tipos[t].usd.compra = c; } if (v) { out.tipos[t].usd.venta = v; }\n        out.tipos[t].actualizado = d.fechaActualizacion || null;\n        out.tipos[t].detalle.push({ fuente: \"dolarapi.com\", compra: c, venta: v });\n      });\n    }\n    if (bluelytics && bluelytics.blue) {\n      out.fuentes.push(\"bluelytics.com.ar\");\n      var b = bluelytics;\n      var pares = [[\"blue\", b.blue, b.blue_euro], [\"oficial\", b.oficial, b.oficial_euro]];\n      pares.forEach(function (p) {\n        var T = out.tipos[p[0]];\n        if (p[1]) {\n          T.detalle.push({ fuente: \"bluelytics.com.ar\", compra: numStr(p[1].value_buy), venta: numStr(p[1].value_sell) });\n          if (!T.usd.compra) { T.usd.compra = numStr(p[1].value_buy); }\n          if (!T.usd.venta) { T.usd.venta = numStr(p[1].value_sell); }\n        }\n        if (p[2]) { T.eur.compra = numStr(p[2].value_buy); T.eur.venta = numStr(p[2].value_sell); }\n      });\n    }\n    if (eurapi && eurapi.compra && !out.tipos.oficial.eur.compra) {\n      out.tipos.oficial.eur = { compra: numStr(eurapi.compra), venta: numStr(eurapi.venta) };\n    }\n    // Euro para \"bolsa\": dólar bolsa × (euro oficial / dólar oficial). Se marca como derivado.\n    var o = out.tipos.oficial, bo = out.tipos.bolsa;\n    [\"compra\", \"venta\"].forEach(function (l) {\n      if (!bo.eur[l] && bo.usd[l] && o.eur[l] && o.usd[l]) {\n        var r = divCeil(mulCeil(dec(bo.usd[l]), dec(o.eur[l])), dec(o.usd[l]));\n        bo.eur[l] = aCanonico(r, 2); bo.eurDerivado = true;\n      }\n    });\n    // Diferencia entre fuentes (alerta si difieren más de 2%)\n    tipos.forEach(function (t) {\n      var d = out.tipos[t].detalle.filter(function (x) { return x.venta; });\n      if (d.length >= 2) {\n        var a = Number(d[0].venta), b2 = Number(d[1].venta);\n        out.tipos[t].diferencia = Math.abs(a - b2) / Math.min(a, b2);\n      }\n    });\n    return out;\n  }\n  function tasasDe(cot, tipo, lado) {\n    if (!cot || !cot.tipos[tipo]) { return null; }\n    var T = cot.tipos[tipo];\n    if (!T.usd[lado]) { return null; }\n    return { tipo: tipo, lado: lado, usd: T.usd, eur: T.eur, tomadaEn: cot.tomadaEn };\n  }\n\n  /* ---------------- Distancias y tiempos ---------------- */\n  function haversine(a, b) {\n    var R = 6371000, r = Math.PI / 180;\n    var dLat = (b.lat - a.lat) * r, dLng = (b.lng - a.lng) * r;\n    var x = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLng / 2) ** 2;\n    return 2 * R * Math.asin(Math.sqrt(x));\n  }\n  // Estimación sin servicio de rutas: recorrido urbano ≈ 1,35 × línea recta a 22 km/h\n  function matrizEstimada(puntos) {\n    var n = puntos.length, dur = [], dist = [];\n    for (var i = 0; i < n; i++) {\n      dur.push([]); dist.push([]);\n      for (var j = 0; j < n; j++) {\n        var d = i === j ? 0 : haversine(puntos[i], puntos[j]) * 1.35;\n        dist[i].push(d); dur[i].push(d / (22000 / 3600));\n      }\n    }\n    return { dur: dur, dist: dist, fuente: \"estimada\" };\n  }\n\n  /* ---------------- Modelo de una parada para el motor ----------------\n     parada = { id, lat, lng, horaMin|null, montos:[{sentido, moneda, importe}] }\n     Se precalcula el equivalente en USD de entregas y retiros (BigInt exacto)\n     y su versión Number solo para ordenar alternativas. */\n  function prepararParadas(paradas, tasas) {\n    return paradas.map(function (p) {\n      var ent = 0n, ret = 0n, falta = false, porMoneda = {};\n      (p.montos || []).forEach(function (m) {\n        var u = aUSD(m.importe, m.moneda, tasas);\n        if (u == null) { falta = true; u = 0n; }\n        if (m.sentido === \"entrega\") { ent += u; } else { ret += u; }\n        porMoneda[m.moneda] = porMoneda[m.moneda] || { entrega: 0n, retiro: 0n };\n        porMoneda[m.moneda][m.sentido] += dec(m.importe);\n      });\n      return {\n        id: p.id, lat: p.lat, lng: p.lng, horaMin: p.horaMin == null ? null : p.horaMin,\n        entUSD: ent, retUSD: ret, ent: aNumero(ent), ret: aNumero(ret), sinCotizacion: falta,\n        porMoneda: porMoneda, ref: p\n      };\n    });\n  }\n\n  /* ---------------- Evaluación de un recorrido ----------------\n     idx: índices en la matriz (0 = base). Devuelve tiempos y exposición. */\n  function evaluar(ruta, P, M, cfg) {\n    var t = cfg.salidaMin * 60, t0 = t, prev = 0, carga = 0, area = 0, pico = 0, tarde = 0, espera = 0, dist = 0;\n    var tol = cfg.toleranciaMin * 60, serv = cfg.servicioMin * 60, fx = cfg.factorTransito;\n    for (var k = 0; k < ruta.length; k++) { carga += P[ruta[k]].ent; }\n    pico = carga;\n    var etas = [];\n    for (var i = 0; i < ruta.length; i++) {\n      var s = P[ruta[i]], mi = ruta[i] + 1;\n      var viaje = M.dur[prev][mi] * fx;\n      dist += M.dist[prev][mi];\n      area += carga * viaje; t += viaje;\n      if (s.horaMin != null) {\n        var desde = s.horaMin * 60 - tol, hasta = s.horaMin * 60 + tol;\n        if (t < desde) { area += carga * (desde - t); espera += desde - t; t = desde; }\n        if (t > hasta) { tarde += t - hasta; }\n      }\n      etas.push(t);\n      t += serv; area += carga * serv;\n      carga = carga - s.ent + s.ret;\n      if (carga > pico) { pico = carga; }\n      prev = mi;\n    }\n    if (ruta.length) {\n      var back = M.dur[prev][0] * fx; dist += M.dist[prev][0];\n      area += carga * back; t += back;\n    }\n    return { inicio: t0, fin: t, dur: t - t0, area: area, pico: pico, tarde: tarde, espera: espera, dist: dist, etas: etas };\n  }\n\n  function costo(rutas, P, M, cfg, lambda) {\n    var total = 0, fin = 0, area = 0, tarde = 0, exceso = 0, evs = [];\n    for (var r = 0; r < rutas.length; r++) {\n      var e = evaluar(rutas[r], P, M, cfg); evs.push(e);\n      total += e.dur; area += e.area; tarde += e.tarde;\n      if (e.fin > fin) { fin = e.fin; }\n      if (e.pico > cfg.tope) { exceso += e.pico - cfg.tope; }\n    }\n    var c = total + 1.0 * (fin - cfg.salidaMin * 60) + 25 * tarde + lambda * area + exceso * 4;\n    return { c: c, evs: evs, total: total, fin: fin, area: area, tarde: tarde, exceso: exceso };\n  }\n\n  /* ---------------- Búsqueda ---------------- */\n  function rng(seed) { var s = seed >>> 0 || 1; return function () { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; return ((s >>> 0) % 1e9) / 1e9; }; }\n\n  function construir(P, M, cfg, k, lambda, rand) {\n    var orden = P.map(function (_, i) { return i; });\n    orden.sort(function (a, b) {\n      var ha = P[a].horaMin == null ? 1e9 : P[a].horaMin, hb = P[b].horaMin == null ? 1e9 : P[b].horaMin;\n      return ha - hb || (rand() - 0.5);\n    });\n    if (rand() < 0.5) {   // variante: primero las más lejanas sin horario\n      var sinH = orden.filter(function (i) { return P[i].horaMin == null; });\n      var conH = orden.filter(function (i) { return P[i].horaMin != null; });\n      sinH.sort(function (a, b) { return M.dur[0][b + 1] - M.dur[0][a + 1] + (rand() - 0.5) * 120; });\n      orden = conH.concat(sinH);\n    }\n    var rutas = []; for (var r = 0; r < k; r++) { rutas.push([]); }\n    orden.forEach(function (i) {\n      var mejor = null;\n      for (var r = 0; r < k; r++) {\n        for (var pos = 0; pos <= rutas[r].length; pos++) {\n          rutas[r].splice(pos, 0, i);\n          var c = costo(rutas, P, M, cfg, lambda).c;\n          rutas[r].splice(pos, 1);\n          if (!mejor || c < mejor.c) { mejor = { c: c, r: r, pos: pos }; }\n        }\n      }\n      rutas[mejor.r].splice(mejor.pos, 0, i);\n    });\n    return rutas;\n  }\n\n  function mejorar(rutas, P, M, cfg, lambda, limiteMs) {\n    var t0 = Date.now(), actual = costo(rutas, P, M, cfg, lambda).c, hubo = true;\n    while (hubo && Date.now() - t0 < limiteMs) {\n      hubo = false;\n      // mover una parada a otra posición / otro recorrido\n      for (var a = 0; a < rutas.length; a++) {\n        for (var i = 0; i < rutas[a].length; i++) {\n          var x = rutas[a][i]; rutas[a].splice(i, 1);\n          var mej = null;\n          for (var b = 0; b < rutas.length; b++) {\n            for (var j = 0; j <= rutas[b].length; j++) {\n              if (a === b && j === i) { continue; }\n              rutas[b].splice(j, 0, x);\n              var c = costo(rutas, P, M, cfg, lambda).c;\n              rutas[b].splice(j, 1);\n              if (c < actual - 1e-6 && (!mej || c < mej.c)) { mej = { c: c, b: b, j: j }; }\n            }\n          }\n          if (mej) { rutas[mej.b].splice(mej.j, 0, x); actual = mej.c; hubo = true; }\n          else { rutas[a].splice(i, 0, x); }\n        }\n      }\n      // intercambiar paradas entre recorridos\n      for (var a2 = 0; a2 < rutas.length; a2++) {\n        for (var b2 = a2 + 1; b2 < rutas.length; b2++) {\n          for (var i2 = 0; i2 < rutas[a2].length; i2++) {\n            for (var j2 = 0; j2 < rutas[b2].length; j2++) {\n              var u = rutas[a2][i2], v = rutas[b2][j2];\n              rutas[a2][i2] = v; rutas[b2][j2] = u;\n              var c2 = costo(rutas, P, M, cfg, lambda).c;\n              if (c2 < actual - 1e-6) { actual = c2; hubo = true; }\n              else { rutas[a2][i2] = u; rutas[b2][j2] = v; }\n            }\n          }\n        }\n      }\n      // 2-opt dentro de cada recorrido\n      for (var r = 0; r < rutas.length; r++) {\n        var R = rutas[r];\n        for (var p = 0; p < R.length - 1; p++) {\n          for (var q = p + 1; q < R.length; q++) {\n            var seg = R.slice(p, q + 1).reverse();\n            var old = R.slice(p, q + 1);\n            Array.prototype.splice.apply(R, [p, seg.length].concat(seg));\n            var c3 = costo(rutas, P, M, cfg, lambda).c;\n            if (c3 < actual - 1e-6) { actual = c3; hubo = true; }\n            else { Array.prototype.splice.apply(R, [p, old.length].concat(old)); }\n          }\n        }\n      }\n    }\n    return actual;\n  }\n\n  function optimizarCon(P, M, cfg, k, lambda, presupuestoMs, semilla) {\n    var rand = rng(semilla || 7), mejor = null, t0 = Date.now(), intentos = 0;\n    var n = P.length;\n    var porIntento = Math.max(40, Math.min(400, presupuestoMs / 3));\n    do {\n      var rutas = construir(P, M, cfg, k, lambda, rand);\n      var c = mejorar(rutas, P, M, cfg, lambda, porIntento);\n      if (!mejor || c < mejor.c) { mejor = { c: c, rutas: rutas.map(function (x) { return x.slice(); }) }; }\n      intentos++;\n    } while (Date.now() - t0 < presupuestoMs && n > 2 && intentos < 60);\n    return mejor.rutas;\n  }\n\n  /* ---------------- Resultado exacto de un plan ---------------- */\n  function detallarPlan(rutas, P, M, cfg, tasas, topeUSD) {\n    var topeBig = dec(topeUSD);\n    var viajes = rutas.map(function (ruta) {\n      var ev = evaluar(ruta, P, M, cfg);\n      // carga exacta por moneda y en USD equivalente\n      var carga = {}; var cargaUSD = 0n;\n      ruta.forEach(function (i) {\n        var pm = P[i].porMoneda;\n        Object.keys(pm).forEach(function (mo) { carga[mo] = (carga[mo] || 0n) + pm[mo].entrega; });\n        cargaUSD += P[i].entUSD;\n      });\n      var salidaCarga = Object.assign({}, carga);\n      var pico = cargaUSD, picoEn = -1, curva = [{ t: ev.inicio, usd: cargaUSD, parada: -1 }];\n      ruta.forEach(function (i, n) {\n        var pm = P[i].porMoneda;\n        curva.push({ t: ev.etas[n], usd: cargaUSD, parada: n, antes: true });\n        Object.keys(pm).forEach(function (mo) { carga[mo] = (carga[mo] || 0n) - pm[mo].entrega + pm[mo].retiro; });\n        cargaUSD = cargaUSD - P[i].entUSD + P[i].retUSD;\n        curva.push({ t: ev.etas[n] + cfg.servicioMin * 60, usd: cargaUSD, parada: n });\n        if (cargaUSD > pico) { pico = cargaUSD; picoEn = n; }\n      });\n      curva.push({ t: ev.fin, usd: cargaUSD, parada: ruta.length });\n      return {\n        paradas: ruta.map(function (i, n) { return { id: P[i].id, eta: ev.etas[n], ref: P[i].ref, tarde: P[i].horaMin != null && ev.etas[n] > (P[i].horaMin + cfg.toleranciaMin) * 60 }; }),\n        inicio: ev.inicio, fin: ev.fin, dur: ev.dur, dist: ev.dist, espera: ev.espera, tarde: ev.tarde,\n        area: ev.area, salidaCarga: salidaCarga, llegadaCarga: carga, picoUSD: pico, picoEn: picoEn,\n        excede: pico > topeBig, curva: curva, sinCotizacion: ruta.some(function (i) { return P[i].sinCotizacion; })\n      };\n    });\n    var fin = 0, total = 0, dist = 0, area = 0, excede = 0, tarde = 0, pico = 0n;\n    viajes.forEach(function (v) {\n      if (v.paradas.length) { fin = Math.max(fin, v.fin); }\n      total += v.dur; dist += v.dist; area += v.area; tarde += v.tarde;\n      if (v.excede) { excede++; } if (v.picoUSD > pico) { pico = v.picoUSD; }\n    });\n    return { viajes: viajes, fin: fin, total: total, dist: dist, area: area, excedidos: excede, tarde: tarde, picoUSD: pico, topeUSD: topeBig };\n  }\n\n  /* ---------------- API: alternativas ----------------\n     cfg: { salidaMin, toleranciaMin, servicioMin, factorTransito, tope(Number USD) }\n     k: cantidad de repartidores disponibles. */\n  function alternativas(paradas, M, cfg, k, tasas, topeUSD, presupuestoMs) {\n    var P = prepararParadas(paradas, tasas);\n    var pres = presupuestoMs || 900;\n    var tope = Math.max(1, cfg.tope);\n    var L_REC = 60 / (tope * 1800);     // 1 min ≈ llevar el tope completo 30 min\n    var L_EXP = 60 / (tope * 150);      // 1 min ≈ llevar el tope completo 2,5 min\n    var defs = [\n      { clave: \"recomendada\", titulo: \"Recomendada\", sub: \"Menos tiempo, y a igual tiempo, menos plata encima\", lambda: L_REC, k: k },\n      { clave: \"exposicion\", titulo: \"Menor exposición\", sub: \"Acepta algo más de tiempo para llevar menos plata encima\", lambda: L_EXP, k: k },\n      { clave: \"rapida\", titulo: \"Más rápida\", sub: \"Solo minimiza el tiempo total\", lambda: 0, k: k }\n    ];\n    if (k > 1) { defs.push({ clave: \"menos\", titulo: \"Con \" + (k - 1) + \" repartidor\" + (k - 1 > 1 ? \"es\" : \"\"), sub: \"Libera un repartidor\", lambda: L_REC, k: k - 1 }); }\n    var vistos = {}, out = [];\n    defs.forEach(function (d, i) {\n      var rutas = optimizarCon(P, M, cfg, d.k, d.lambda, pres / defs.length, 11 + i * 7);\n      var firma = rutas.map(function (r) { return r.join(\",\"); }).sort().join(\"|\");\n      var det = detallarPlan(rutas, P, M, cfg, tasas, topeUSD);\n      det.clave = d.clave; det.titulo = d.titulo; det.sub = d.sub; det.k = d.k; det.rutas = rutas;\n      if (vistos[firma]) { vistos[firma].tambien.push(d.titulo); return; }\n      det.tambien = []; vistos[firma] = det; out.push(det);\n    });\n    return { P: P, alternativas: out };\n  }\n\n  // Recalcular tiempos de un plan editado a mano (sin reordenar)\n  function recalcular(rutas, P, M, cfg, tasas, topeUSD) {\n    return detallarPlan(rutas, P, M, cfg, tasas, topeUSD);\n  }\n  // Reordenar solo dentro de cada recorrido (respeta la asignación manual)\n  function reordenar(rutas, P, M, cfg, lambda) {\n    var copia = rutas.map(function (r) { return r.slice(); });\n    var res = copia.map(function (r) {\n      var una = [r.slice()];\n      mejorar(una, P, M, cfg, lambda == null ? 60 / (Math.max(1, cfg.tope) * 1800) : lambda, 250);\n      return una[0];\n    });\n    return res;\n  }\n\n  var Motor = {\n    MONEDAS: MONEDAS, dec: dec, aCanonico: aCanonico, aNumero: aNumero, parsearImporte: parsearImporte,\n    fmtNum: fmtNum, fmtDinero: fmtDinero, fmtCompacto: fmtCompacto, aUSD: aUSD,\n    normalizarCotizaciones: normalizarCotizaciones, tasasDe: tasasDe,\n    haversine: haversine, matrizEstimada: matrizEstimada, prepararParadas: prepararParadas,\n    evaluar: evaluar, alternativas: alternativas, recalcular: recalcular, reordenar: reordenar, detallarPlan: detallarPlan\n  };\n  if (typeof module !== \"undefined\" && module.exports) { module.exports = Motor; } else { root.Motor = Motor; }\n})(typeof window !== \"undefined\" ? window : globalThis);\n";
+<script>window.__MOTOR_SRC__="/* =====================================================================\n   MOTOR — dinero exacto, cotizaciones, tiempos y optimizador de rutas.\n   Sin dependencias. Corre en el navegador y en Node (pruebas).\n   ===================================================================== */\n(function (root) {\n  \"use strict\";\n\n  /* ---------------- Dinero exacto (BigInt, nunca float) ---------------- */\n  var ESC = 10n;                    // escala interna: 10 decimales\n  var F = 10n ** ESC;\n  var MONEDAS = {\n    USD: { dec: 2, simbolo: \"US$\", nombre: \"Dólares\" },\n    ARS: { dec: 2, simbolo: \"$\", nombre: \"Pesos\" },\n    EUR: { dec: 2, simbolo: \"€\", nombre: \"Euros\" }\n  };\n\n  // \"15000.50\" (canónico, como viene de la base) → BigInt escalado\n  function dec(str) {\n    str = String(str).trim();\n    if (!/^-?\\d+(\\.\\d+)?$/.test(str)) { throw new Error(\"Número inválido: \" + str); }\n    var neg = str[0] === \"-\"; if (neg) { str = str.slice(1); }\n    var p = str.split(\".\"), ent = p[0], fr = (p[1] || \"\");\n    if (fr.length > Number(ESC)) {         // más precisión que la escala: se trunca hacia arriba\n      var extra = fr.slice(Number(ESC)); fr = fr.slice(0, Number(ESC));\n      var v0 = BigInt(ent) * F + BigInt(fr);\n      if (/[1-9]/.test(extra)) { v0 += 1n; }\n      return neg ? -v0 : v0;\n    }\n    var v = BigInt(ent) * F + BigInt((fr + \"0\".repeat(Number(ESC))).slice(0, Number(ESC)));\n    return neg ? -v : v;\n  }\n  function mulCeil(a, b) { var p = a * b; var q = p / F; if (p % F !== 0n && p > 0n) { q += 1n; } return q; }\n  function divCeil(a, b) { var p = a * F; var q = p / b; if (p % b !== 0n && (p > 0n) === (b > 0n)) { q += 1n; } return q; }\n  function aNumero(a) { return Number(a) / Number(F); }   // SOLO para dibujar/ordenar, nunca para guardar\n  function aCanonico(a, decs) {\n    var neg = a < 0n; if (neg) { a = -a; }\n    var s = F / (10n ** BigInt(decs)); var q = a / s; if (a % s !== 0n) { q += 1n; }  // hacia arriba (conservador)\n    var d = 10n ** BigInt(decs); var ent = q / d, fr = q % d;\n    return (neg ? \"-\" : \"\") + ent.toString() + (decs ? \".\" + fr.toString().padStart(decs, \"0\") : \"\");\n  }\n\n  // Entrada del usuario en formato argentino: miles con punto, decimales con coma.\n  // Nunca redondea: si sobran decimales, error. Si es ambiguo, error explicativo.\n  function parsearImporte(txt, moneda) {\n    var m = MONEDAS[moneda]; if (!m) { return { error: \"Elegí la moneda\" }; }\n    var s = String(txt || \"\").replace(/\\s| /g, \"\").replace(/^(US\\$|\\$|€|USD|ARS|EUR)/i, \"\");\n    if (!s) { return { error: \"Falta el importe\" }; }\n    if (!/^[\\d.,]+$/.test(s)) { return { error: \"Solo números, puntos y coma\" }; }\n    var ent, fr = \"\";\n    if (s.indexOf(\",\") >= 0) {\n      if (s.split(\",\").length > 2) { return { error: \"Hay más de una coma\" }; }\n      var p = s.split(\",\"); ent = p[0]; fr = p[1];\n      if (!fr) { return { error: \"Faltan los decimales después de la coma\" }; }\n    } else { ent = s; }\n    if (ent.indexOf(\".\") >= 0) {\n      if (!/^\\d{1,3}(\\.\\d{3})+$/.test(ent)) { return { error: \"El punto separa miles. Para decimales usá coma\" }; }\n      ent = ent.replace(/\\./g, \"\");\n    }\n    if (!/^\\d+$/.test(ent)) { return { error: \"Importe inválido\" }; }\n    if (fr.length > m.dec) { return { error: moneda + \" admite \" + m.dec + \" decimales. Corregí el importe\" }; }\n    ent = ent.replace(/^0+(?=\\d)/, \"\");\n    var canon = ent + (fr ? \".\" + fr : \"\");\n    if (dec(canon) <= 0n) { return { error: \"El importe tiene que ser mayor que cero\" }; }\n    if (ent.length > 13) { return { error: \"Importe fuera de rango\" }; }\n    return { valor: canon };\n  }\n\n  // \"15000.5\" → \"15.000,50\"\n  function fmtNum(canon, decs) {\n    var v = typeof canon === \"bigint\" ? canon : dec(canon);\n    var s = aCanonico(v, decs == null ? 2 : decs);\n    var neg = s[0] === \"-\"; if (neg) { s = s.slice(1); }\n    var p = s.split(\".\"), ent = p[0].replace(/\\B(?=(\\d{3})+(?!\\d))/g, \".\");\n    return (neg ? \"−\" : \"\") + ent + (p[1] ? \",\" + p[1] : \"\");\n  }\n  function fmtDinero(canon, moneda, opts) {\n    var m = MONEDAS[moneda] || { dec: 2, simbolo: moneda };\n    var decs = m.dec;\n    if (opts && opts.compacto) {\n      var v = typeof canon === \"bigint\" ? canon : dec(canon);\n      if (v % F === 0n) { decs = 0; }\n    }\n    return m.simbolo + \" \" + fmtNum(canon, decs);\n  }\n  function fmtCompacto(big) {             // USD 18,4k (para gráficos)\n    var n = aNumero(big);\n    function d1(x) { var t = x.toFixed(x >= 100 ? 0 : 1); return t.replace(/\\.0$/, \"\").replace(\".\", \",\"); }\n    if (Math.abs(n) >= 1e6) { return d1(n / 1e6) + \"M\"; }\n    if (Math.abs(n) >= 1e3) { return d1(n / 1e3) + \"k\"; }\n    return String(Math.round(n));\n  }\n\n  /* ---------------- Cotizaciones ---------------- */\n  // tasas = { tipo, lado, usd:{compra,venta}, eur:{compra,venta} } en ARS, strings canónicos\n  function numStr(x) {\n    if (x == null || x === \"\") { return null; }\n    var s = typeof x === \"number\" ? x.toString() : String(x);\n    if (/e/i.test(s)) { s = Number(s).toFixed(6); }\n    return /^\\d+(\\.\\d+)?$/.test(s) ? s : null;\n  }\n  function aUSD(importe, moneda, tasas) {        // → BigInt escalado (USD), redondeo hacia arriba\n    var v = dec(importe);\n    if (moneda === \"USD\") { return v; }\n    if (!tasas) { return null; }\n    var lado = tasas.lado || \"compra\";\n    var usd = tasas.usd && tasas.usd[lado]; if (!usd) { return null; }\n    if (moneda === \"ARS\") { return divCeil(v, dec(usd)); }\n    if (moneda === \"EUR\") {\n      var eur = tasas.eur && tasas.eur[lado]; if (!eur) { return null; }\n      return divCeil(mulCeil(v, dec(eur)), dec(usd));\n    }\n    return null;\n  }\n\n  function normalizarCotizaciones(dolarapi, bluelytics, eurapi) {\n    var out = { tomadaEn: new Date().toISOString(), fuentes: [], tipos: {} };\n    var tipos = [\"blue\", \"oficial\", \"bolsa\"];\n    tipos.forEach(function (t) { out.tipos[t] = { usd: {}, eur: {}, detalle: [] }; });\n    if (Array.isArray(dolarapi)) {\n      out.fuentes.push(\"dolarapi.com\");\n      dolarapi.forEach(function (d) {\n        var t = d.casa; if (!out.tipos[t]) { return; }\n        var c = numStr(d.compra), v = numStr(d.venta);\n        if (c) { out.tipos[t].usd.compra = c; } if (v) { out.tipos[t].usd.venta = v; }\n        out.tipos[t].actualizado = d.fechaActualizacion || null;\n        out.tipos[t].detalle.push({ fuente: \"dolarapi.com\", compra: c, venta: v });\n      });\n    }\n    if (bluelytics && bluelytics.blue) {\n      out.fuentes.push(\"bluelytics.com.ar\");\n      var b = bluelytics;\n      var pares = [[\"blue\", b.blue, b.blue_euro], [\"oficial\", b.oficial, b.oficial_euro]];\n      pares.forEach(function (p) {\n        var T = out.tipos[p[0]];\n        if (p[1]) {\n          T.detalle.push({ fuente: \"bluelytics.com.ar\", compra: numStr(p[1].value_buy), venta: numStr(p[1].value_sell) });\n          if (!T.usd.compra) { T.usd.compra = numStr(p[1].value_buy); }\n          if (!T.usd.venta) { T.usd.venta = numStr(p[1].value_sell); }\n        }\n        if (p[2]) { T.eur.compra = numStr(p[2].value_buy); T.eur.venta = numStr(p[2].value_sell); }\n      });\n    }\n    if (eurapi && eurapi.compra && !out.tipos.oficial.eur.compra) {\n      out.tipos.oficial.eur = { compra: numStr(eurapi.compra), venta: numStr(eurapi.venta) };\n    }\n    // Euro para \"bolsa\": dólar bolsa × (euro oficial / dólar oficial). Se marca como derivado.\n    var o = out.tipos.oficial, bo = out.tipos.bolsa;\n    [\"compra\", \"venta\"].forEach(function (l) {\n      if (!bo.eur[l] && bo.usd[l] && o.eur[l] && o.usd[l]) {\n        var r = divCeil(mulCeil(dec(bo.usd[l]), dec(o.eur[l])), dec(o.usd[l]));\n        bo.eur[l] = aCanonico(r, 2); bo.eurDerivado = true;\n      }\n    });\n    // Diferencia entre fuentes (alerta si difieren más de 2%)\n    tipos.forEach(function (t) {\n      var d = out.tipos[t].detalle.filter(function (x) { return x.venta; });\n      if (d.length >= 2) {\n        var a = Number(d[0].venta), b2 = Number(d[1].venta);\n        out.tipos[t].diferencia = Math.abs(a - b2) / Math.min(a, b2);\n      }\n    });\n    return out;\n  }\n  function tasasDe(cot, tipo, lado) {\n    if (!cot || !cot.tipos[tipo]) { return null; }\n    var T = cot.tipos[tipo];\n    if (!T.usd[lado]) { return null; }\n    return { tipo: tipo, lado: lado, usd: T.usd, eur: T.eur, tomadaEn: cot.tomadaEn };\n  }\n\n  /* ---------------- Distancias y tiempos ---------------- */\n  function haversine(a, b) {\n    var R = 6371000, r = Math.PI / 180;\n    var dLat = (b.lat - a.lat) * r, dLng = (b.lng - a.lng) * r;\n    var x = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLng / 2) ** 2;\n    return 2 * R * Math.asin(Math.sqrt(x));\n  }\n  // Estimación sin servicio de rutas: recorrido urbano ≈ 1,35 × línea recta a 22 km/h\n  function matrizEstimada(puntos) {\n    var n = puntos.length, dur = [], dist = [];\n    for (var i = 0; i < n; i++) {\n      dur.push([]); dist.push([]);\n      for (var j = 0; j < n; j++) {\n        var d = i === j ? 0 : haversine(puntos[i], puntos[j]) * 1.35;\n        dist[i].push(d); dur[i].push(d / (22000 / 3600));\n      }\n    }\n    return { dur: dur, dist: dist, fuente: \"estimada\" };\n  }\n\n  /* ---------------- Modelo de una parada para el motor ----------------\n     parada = { id, lat, lng, horaMin|null, montos:[{sentido, moneda, importe}] }\n     Se precalcula el equivalente en USD de entregas y retiros (BigInt exacto)\n     y su versión Number solo para ordenar alternativas. */\n  function prepararParadas(paradas, tasas) {\n    return paradas.map(function (p) {\n      var ent = 0n, ret = 0n, falta = false, porMoneda = {};\n      (p.montos || []).forEach(function (m) {\n        var u = aUSD(m.importe, m.moneda, tasas);\n        if (u == null) { falta = true; u = 0n; }\n        if (m.sentido === \"entrega\") { ent += u; } else { ret += u; }\n        porMoneda[m.moneda] = porMoneda[m.moneda] || { entrega: 0n, retiro: 0n };\n        porMoneda[m.moneda][m.sentido] += dec(m.importe);\n      });\n      return {\n        id: p.id, lat: p.lat, lng: p.lng, horaMin: p.horaMin == null ? null : p.horaMin,\n        entUSD: ent, retUSD: ret, ent: aNumero(ent), ret: aNumero(ret), sinCotizacion: falta,\n        porMoneda: porMoneda, ref: p\n      };\n    });\n  }\n\n  /* ---------------- Evaluación de un recorrido ----------------\n     idx: índices en la matriz (0 = base). Devuelve tiempos y exposición. */\n  function evaluar(ruta, P, M, cfg) {\n    var t = cfg.salidaMin * 60, t0 = t, prev = 0, carga = 0, area = 0, pico = 0, tarde = 0, espera = 0, dist = 0;\n    var tol = cfg.toleranciaMin * 60, serv = cfg.servicioMin * 60, fx = cfg.factorTransito;\n    for (var k = 0; k < ruta.length; k++) { carga += P[ruta[k]].ent; }\n    pico = carga;\n    var etas = [];\n    for (var i = 0; i < ruta.length; i++) {\n      var s = P[ruta[i]], mi = ruta[i] + 1;\n      var viaje = M.dur[prev][mi] * fx;\n      dist += M.dist[prev][mi];\n      area += carga * viaje; t += viaje;\n      if (s.horaMin != null) {\n        var desde = s.horaMin * 60 - tol, hasta = s.horaMin * 60 + tol;\n        if (t < desde) { area += carga * (desde - t); espera += desde - t; t = desde; }\n        if (t > hasta) { tarde += t - hasta; }\n      }\n      etas.push(t);\n      t += serv; area += carga * serv;\n      carga = carga - s.ent + s.ret;\n      if (carga > pico) { pico = carga; }\n      prev = mi;\n    }\n    if (ruta.length) {\n      var back = M.dur[prev][0] * fx; dist += M.dist[prev][0];\n      area += carga * back; t += back;\n    }\n    return { inicio: t0, fin: t, dur: t - t0, area: area, pico: pico, tarde: tarde, espera: espera, dist: dist, etas: etas };\n  }\n\n  function costo(rutas, P, M, cfg, lambda) {\n    var total = 0, fin = 0, area = 0, tarde = 0, exceso = 0, evs = [];\n    for (var r = 0; r < rutas.length; r++) {\n      var e = evaluar(rutas[r], P, M, cfg); evs.push(e);\n      total += e.dur; area += e.area; tarde += e.tarde;\n      if (e.fin > fin) { fin = e.fin; }\n      if (e.pico > cfg.tope) { exceso += e.pico - cfg.tope; }\n    }\n    var c = total + 1.0 * (fin - cfg.salidaMin * 60) + 25 * tarde + lambda * area + exceso * 4;\n    return { c: c, evs: evs, total: total, fin: fin, area: area, tarde: tarde, exceso: exceso };\n  }\n\n  /* ---------------- Búsqueda ---------------- */\n  function rng(seed) { var s = seed >>> 0 || 1; return function () { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; return ((s >>> 0) % 1e9) / 1e9; }; }\n\n  function construir(P, M, cfg, k, lambda, rand) {\n    var orden = P.map(function (_, i) { return i; });\n    orden.sort(function (a, b) {\n      var ha = P[a].horaMin == null ? 1e9 : P[a].horaMin, hb = P[b].horaMin == null ? 1e9 : P[b].horaMin;\n      return ha - hb || (rand() - 0.5);\n    });\n    if (rand() < 0.5) {   // variante: primero las más lejanas sin horario\n      var sinH = orden.filter(function (i) { return P[i].horaMin == null; });\n      var conH = orden.filter(function (i) { return P[i].horaMin != null; });\n      sinH.sort(function (a, b) { return M.dur[0][b + 1] - M.dur[0][a + 1] + (rand() - 0.5) * 120; });\n      orden = conH.concat(sinH);\n    }\n    var rutas = []; for (var r = 0; r < k; r++) { rutas.push([]); }\n    orden.forEach(function (i) {\n      var mejor = null;\n      for (var r = 0; r < k; r++) {\n        for (var pos = 0; pos <= rutas[r].length; pos++) {\n          rutas[r].splice(pos, 0, i);\n          var c = costo(rutas, P, M, cfg, lambda).c;\n          rutas[r].splice(pos, 1);\n          if (!mejor || c < mejor.c) { mejor = { c: c, r: r, pos: pos }; }\n        }\n      }\n      rutas[mejor.r].splice(mejor.pos, 0, i);\n    });\n    return rutas;\n  }\n\n  function mejorar(rutas, P, M, cfg, lambda, limiteMs) {\n    var t0 = Date.now(), actual = costo(rutas, P, M, cfg, lambda).c, hubo = true;\n    while (hubo && Date.now() - t0 < limiteMs) {\n      hubo = false;\n      // mover una parada a otra posición / otro recorrido\n      for (var a = 0; a < rutas.length; a++) {\n        for (var i = 0; i < rutas[a].length; i++) {\n          var x = rutas[a][i]; rutas[a].splice(i, 1);\n          var mej = null;\n          for (var b = 0; b < rutas.length; b++) {\n            for (var j = 0; j <= rutas[b].length; j++) {\n              if (a === b && j === i) { continue; }\n              rutas[b].splice(j, 0, x);\n              var c = costo(rutas, P, M, cfg, lambda).c;\n              rutas[b].splice(j, 1);\n              if (c < actual - 1e-6 && (!mej || c < mej.c)) { mej = { c: c, b: b, j: j }; }\n            }\n          }\n          if (mej) { rutas[mej.b].splice(mej.j, 0, x); actual = mej.c; hubo = true; }\n          else { rutas[a].splice(i, 0, x); }\n        }\n      }\n      // intercambiar paradas entre recorridos\n      for (var a2 = 0; a2 < rutas.length; a2++) {\n        for (var b2 = a2 + 1; b2 < rutas.length; b2++) {\n          for (var i2 = 0; i2 < rutas[a2].length; i2++) {\n            for (var j2 = 0; j2 < rutas[b2].length; j2++) {\n              var u = rutas[a2][i2], v = rutas[b2][j2];\n              rutas[a2][i2] = v; rutas[b2][j2] = u;\n              var c2 = costo(rutas, P, M, cfg, lambda).c;\n              if (c2 < actual - 1e-6) { actual = c2; hubo = true; }\n              else { rutas[a2][i2] = u; rutas[b2][j2] = v; }\n            }\n          }\n        }\n      }\n      // 2-opt dentro de cada recorrido\n      for (var r = 0; r < rutas.length; r++) {\n        var R = rutas[r];\n        for (var p = 0; p < R.length - 1; p++) {\n          for (var q = p + 1; q < R.length; q++) {\n            var seg = R.slice(p, q + 1).reverse();\n            var old = R.slice(p, q + 1);\n            Array.prototype.splice.apply(R, [p, seg.length].concat(seg));\n            var c3 = costo(rutas, P, M, cfg, lambda).c;\n            if (c3 < actual - 1e-6) { actual = c3; hubo = true; }\n            else { Array.prototype.splice.apply(R, [p, old.length].concat(old)); }\n          }\n        }\n      }\n    }\n    return actual;\n  }\n\n  function optimizarCon(P, M, cfg, k, lambda, presupuestoMs, semilla) {\n    var rand = rng(semilla || 7), mejor = null, t0 = Date.now(), intentos = 0;\n    var n = P.length;\n    var porIntento = Math.max(40, Math.min(400, presupuestoMs / 3));\n    do {\n      var rutas = construir(P, M, cfg, k, lambda, rand);\n      var c = mejorar(rutas, P, M, cfg, lambda, porIntento);\n      if (!mejor || c < mejor.c) { mejor = { c: c, rutas: rutas.map(function (x) { return x.slice(); }) }; }\n      intentos++;\n    } while (Date.now() - t0 < presupuestoMs && n > 2 && intentos < 60);\n    return mejor.rutas;\n  }\n\n  /* ---------------- Resultado exacto de un plan ---------------- */\n  function detallarPlan(rutas, P, M, cfg, tasas, topeUSD) {\n    var topeBig = dec(topeUSD);\n    var viajes = rutas.map(function (ruta) {\n      var ev = evaluar(ruta, P, M, cfg);\n      // carga exacta por moneda y en USD equivalente\n      var carga = {}; var cargaUSD = 0n;\n      ruta.forEach(function (i) {\n        var pm = P[i].porMoneda;\n        Object.keys(pm).forEach(function (mo) { carga[mo] = (carga[mo] || 0n) + pm[mo].entrega; });\n        cargaUSD += P[i].entUSD;\n      });\n      var salidaCarga = Object.assign({}, carga);\n      var pico = cargaUSD, picoEn = -1, curva = [{ t: ev.inicio, usd: cargaUSD, parada: -1 }];\n      ruta.forEach(function (i, n) {\n        var pm = P[i].porMoneda;\n        curva.push({ t: ev.etas[n], usd: cargaUSD, parada: n, antes: true });\n        Object.keys(pm).forEach(function (mo) { carga[mo] = (carga[mo] || 0n) - pm[mo].entrega + pm[mo].retiro; });\n        cargaUSD = cargaUSD - P[i].entUSD + P[i].retUSD;\n        curva.push({ t: ev.etas[n] + cfg.servicioMin * 60, usd: cargaUSD, parada: n });\n        if (cargaUSD > pico) { pico = cargaUSD; picoEn = n; }\n      });\n      curva.push({ t: ev.fin, usd: cargaUSD, parada: ruta.length });\n      return {\n        paradas: ruta.map(function (i, n) { return { id: P[i].id, eta: ev.etas[n], ref: P[i].ref, tarde: P[i].horaMin != null && ev.etas[n] > (P[i].horaMin + cfg.toleranciaMin) * 60 }; }),\n        inicio: ev.inicio, fin: ev.fin, dur: ev.dur, dist: ev.dist, espera: ev.espera, tarde: ev.tarde,\n        area: ev.area, salidaCarga: salidaCarga, llegadaCarga: carga, picoUSD: pico, picoEn: picoEn,\n        excede: pico > topeBig, curva: curva, sinCotizacion: ruta.some(function (i) { return P[i].sinCotizacion; })\n      };\n    });\n    var fin = 0, total = 0, dist = 0, area = 0, excede = 0, tarde = 0, pico = 0n;\n    viajes.forEach(function (v) {\n      if (v.paradas.length) { fin = Math.max(fin, v.fin); }\n      total += v.dur; dist += v.dist; area += v.area; tarde += v.tarde;\n      if (v.excede) { excede++; } if (v.picoUSD > pico) { pico = v.picoUSD; }\n    });\n    return { viajes: viajes, fin: fin, total: total, dist: dist, area: area, excedidos: excede, tarde: tarde, picoUSD: pico, topeUSD: topeBig };\n  }\n\n  /* ---------------- API: alternativas ----------------\n     cfg: { salidaMin, toleranciaMin, servicioMin, factorTransito, tope(Number USD) }\n     k: cantidad de repartidores disponibles. */\n  function alternativas(paradas, M, cfg, k, tasas, topeUSD, presupuestoMs) {\n    var P = prepararParadas(paradas, tasas);\n    var pres = presupuestoMs || 900;\n    var tope = Math.max(1, cfg.tope);\n    var L_REC = 60 / (tope * 1800);     // 1 min ≈ llevar el tope completo 30 min\n    var L_EXP = 60 / (tope * 150);      // 1 min ≈ llevar el tope completo 2,5 min\n    var defs = [\n      { clave: \"recomendada\", titulo: \"Recomendada\", sub: \"Menos tiempo, y a igual tiempo, menos plata encima\", lambda: L_REC, k: k },\n      { clave: \"exposicion\", titulo: \"Menor exposición\", sub: \"Acepta algo más de tiempo para llevar menos plata encima\", lambda: L_EXP, k: k },\n      { clave: \"rapida\", titulo: \"Más rápida\", sub: \"Solo minimiza el tiempo total\", lambda: 0, k: k }\n    ];\n    if (k > 1) { defs.push({ clave: \"menos\", titulo: \"Con \" + (k - 1) + \" repartidor\" + (k - 1 > 1 ? \"es\" : \"\"), sub: \"Libera un repartidor\", lambda: L_REC, k: k - 1 }); }\n    var vistos = {}, out = [];\n    defs.forEach(function (d, i) {\n      var rutas = optimizarCon(P, M, cfg, d.k, d.lambda, pres / defs.length, 11 + i * 7);\n      var firma = rutas.map(function (r) { return r.join(\",\"); }).sort().join(\"|\");\n      var det = detallarPlan(rutas, P, M, cfg, tasas, topeUSD);\n      det.clave = d.clave; det.titulo = d.titulo; det.sub = d.sub; det.k = d.k; det.rutas = rutas;\n      if (vistos[firma]) { vistos[firma].tambien.push(d.titulo); return; }\n      det.tambien = []; vistos[firma] = det; out.push(det);\n    });\n    return { P: P, alternativas: out };\n  }\n\n  // Recalcular tiempos de un plan editado a mano (sin reordenar)\n  function recalcular(rutas, P, M, cfg, tasas, topeUSD) {\n    return detallarPlan(rutas, P, M, cfg, tasas, topeUSD);\n  }\n  // Reordenar solo dentro de cada recorrido (respeta la asignación manual)\n  function reordenar(rutas, P, M, cfg, lambda) {\n    var copia = rutas.map(function (r) { return r.slice(); });\n    var res = copia.map(function (r) {\n      var una = [r.slice()];\n      mejorar(una, P, M, cfg, lambda == null ? 60 / (Math.max(1, cfg.tope) * 1800) : lambda, 250);\n      return una[0];\n    });\n    return res;\n  }\n\n  /* ---------------- Horas estimadas en vivo ----------------\n     Recalcula lo que falta de un recorrido según lo que pasó de verdad:\n     cuándo salió, cuándo se resolvió cada parada y dónde está el repartidor.\n     Los tramos entre paradas se toman del plan (calles reales); solo el tramo\n     desde la posición actual se estima por distancia. Todo en segundos del día.\n     o = { ahora, inicio, iniciado|null, enCurso, finalizado, base|null, pos:{lat,lng,t}|null,\n           tolMin, finPlan|null, paradas:[{ id, lat, lng, eta|null, horaMin|null, estado, resuelta|null }] } */\n  function proyectar(o) {\n    var P = o.paradas, tol = (o.tolMin || 0) * 60, etas = {};\n    var est = function (a, b) { return a && b ? haversine(a, b) * 1.35 / (22000 / 3600) : 0; };\n    var pend = []; P.forEach(function (p, i) { if (p.estado === \"asignada\" || p.estado === \"en_camino\") { pend.push(i); } });\n    if (o.finalizado || !pend.length) { return { etas: etas, fin: o.finalizado ? null : o.finPlan, atraso: 0, atrasoFin: 0, proxima: null }; }\n    var ultRes = -1; for (var k = 0; k < pend[0]; k++) { if (P[k].resuelta != null) { ultRes = k; } }\n    // desde dónde y desde cuándo se calcula\n    var desde, t, prev, prevPlan, gps = false;\n    if (!o.enCurso) { desde = o.base; t = Math.max(o.ahora, o.inicio); prev = null; prevPlan = o.inicio; }\n    else if (o.pos && o.ahora - o.pos.t < 180) { desde = o.pos; t = o.ahora; gps = true; prev = null; prevPlan = null; }\n    else if (ultRes >= 0) { desde = P[ultRes]; t = P[ultRes].resuelta; prev = ultRes; prevPlan = P[ultRes].eta; }\n    else { desde = o.base; t = o.iniciado != null ? o.iniciado : o.inicio; prev = null; prevPlan = o.inicio; }\n    for (var j = 0; j < pend.length; j++) {\n      var s = P[pend[j]], tramo = null;\n      var esperoEnPlan = s.horaMin != null && s.eta != null && Math.abs(s.eta - (s.horaMin * 60 - tol)) < 30;\n      if (!(j === 0 && gps) && prevPlan != null && s.eta != null && !esperoEnPlan) { tramo = Math.max(0, s.eta - prevPlan); }\n      if (tramo == null) { tramo = est(desde, s); }\n      t += tramo;\n      if (j === 0) { t = Math.max(t, o.ahora); }   // si todavía no llegó, no puede ser antes de ahora\n      if (s.horaMin != null && t < s.horaMin * 60 - tol) { t = s.horaMin * 60 - tol; }\n      etas[s.id] = t; desde = s; prevPlan = s.eta; prev = pend[j];\n    }\n    var ultima = P[pend[pend.length - 1]], vuelta;\n    vuelta = o.finPlan != null && ultima.eta != null && pend[pend.length - 1] === P.length - 1 ? Math.max(0, o.finPlan - ultima.eta) : est(ultima, o.base);\n    var fin = t + vuelta, primera = P[pend[0]];\n    return { etas: etas, fin: fin, proxima: primera.id,\n      atraso: primera.eta != null ? etas[primera.id] - primera.eta : 0,\n      atrasoFin: o.finPlan != null ? fin - o.finPlan : 0 };\n  }\n\n  var Motor = {\n    MONEDAS: MONEDAS, dec: dec, aCanonico: aCanonico, aNumero: aNumero, parsearImporte: parsearImporte,\n    fmtNum: fmtNum, fmtDinero: fmtDinero, fmtCompacto: fmtCompacto, aUSD: aUSD,\n    normalizarCotizaciones: normalizarCotizaciones, tasasDe: tasasDe,\n    haversine: haversine, matrizEstimada: matrizEstimada, prepararParadas: prepararParadas,\n    evaluar: evaluar, proyectar: proyectar, alternativas: alternativas, recalcular: recalcular, reordenar: reordenar, detallarPlan: detallarPlan\n  };\n  if (typeof module !== \"undefined\" && module.exports) { module.exports = Motor; } else { root.Motor = Motor; }\n})(typeof window !== \"undefined\" ? window : globalThis);\n";
 ;
 /* =====================================================================
    MOTOR — dinero exacto, cotizaciones, tiempos y optimizador de rutas.
@@ -1226,12 +1226,49 @@ select.inp{appearance:none;padding-right:34px;background-image:url("data:image/s
     return res;
   }
 
+  /* ---------------- Horas estimadas en vivo ----------------
+     Recalcula lo que falta de un recorrido según lo que pasó de verdad:
+     cuándo salió, cuándo se resolvió cada parada y dónde está el repartidor.
+     Los tramos entre paradas se toman del plan (calles reales); solo el tramo
+     desde la posición actual se estima por distancia. Todo en segundos del día.
+     o = { ahora, inicio, iniciado|null, enCurso, finalizado, base|null, pos:{lat,lng,t}|null,
+           tolMin, finPlan|null, paradas:[{ id, lat, lng, eta|null, horaMin|null, estado, resuelta|null }] } */
+  function proyectar(o) {
+    var P = o.paradas, tol = (o.tolMin || 0) * 60, etas = {};
+    var est = function (a, b) { return a && b ? haversine(a, b) * 1.35 / (22000 / 3600) : 0; };
+    var pend = []; P.forEach(function (p, i) { if (p.estado === "asignada" || p.estado === "en_camino") { pend.push(i); } });
+    if (o.finalizado || !pend.length) { return { etas: etas, fin: o.finalizado ? null : o.finPlan, atraso: 0, atrasoFin: 0, proxima: null }; }
+    var ultRes = -1; for (var k = 0; k < pend[0]; k++) { if (P[k].resuelta != null) { ultRes = k; } }
+    // desde dónde y desde cuándo se calcula
+    var desde, t, prev, prevPlan, gps = false;
+    if (!o.enCurso) { desde = o.base; t = Math.max(o.ahora, o.inicio); prev = null; prevPlan = o.inicio; }
+    else if (o.pos && o.ahora - o.pos.t < 180) { desde = o.pos; t = o.ahora; gps = true; prev = null; prevPlan = null; }
+    else if (ultRes >= 0) { desde = P[ultRes]; t = P[ultRes].resuelta; prev = ultRes; prevPlan = P[ultRes].eta; }
+    else { desde = o.base; t = o.iniciado != null ? o.iniciado : o.inicio; prev = null; prevPlan = o.inicio; }
+    for (var j = 0; j < pend.length; j++) {
+      var s = P[pend[j]], tramo = null;
+      var esperoEnPlan = s.horaMin != null && s.eta != null && Math.abs(s.eta - (s.horaMin * 60 - tol)) < 30;
+      if (!(j === 0 && gps) && prevPlan != null && s.eta != null && !esperoEnPlan) { tramo = Math.max(0, s.eta - prevPlan); }
+      if (tramo == null) { tramo = est(desde, s); }
+      t += tramo;
+      if (j === 0) { t = Math.max(t, o.ahora); }   // si todavía no llegó, no puede ser antes de ahora
+      if (s.horaMin != null && t < s.horaMin * 60 - tol) { t = s.horaMin * 60 - tol; }
+      etas[s.id] = t; desde = s; prevPlan = s.eta; prev = pend[j];
+    }
+    var ultima = P[pend[pend.length - 1]], vuelta;
+    vuelta = o.finPlan != null && ultima.eta != null && pend[pend.length - 1] === P.length - 1 ? Math.max(0, o.finPlan - ultima.eta) : est(ultima, o.base);
+    var fin = t + vuelta, primera = P[pend[0]];
+    return { etas: etas, fin: fin, proxima: primera.id,
+      atraso: primera.eta != null ? etas[primera.id] - primera.eta : 0,
+      atrasoFin: o.finPlan != null ? fin - o.finPlan : 0 };
+  }
+
   var Motor = {
     MONEDAS: MONEDAS, dec: dec, aCanonico: aCanonico, aNumero: aNumero, parsearImporte: parsearImporte,
     fmtNum: fmtNum, fmtDinero: fmtDinero, fmtCompacto: fmtCompacto, aUSD: aUSD,
     normalizarCotizaciones: normalizarCotizaciones, tasasDe: tasasDe,
     haversine: haversine, matrizEstimada: matrizEstimada, prepararParadas: prepararParadas,
-    evaluar: evaluar, alternativas: alternativas, recalcular: recalcular, reordenar: reordenar, detallarPlan: detallarPlan
+    evaluar: evaluar, proyectar: proyectar, alternativas: alternativas, recalcular: recalcular, reordenar: reordenar, detallarPlan: detallarPlan
   };
   if (typeof module !== "undefined" && module.exports) { module.exports = Motor; } else { root.Motor = Motor; }
 })(typeof window !== "undefined" ? window : globalThis);
@@ -1370,6 +1407,24 @@ var UI = (function () {
   function epochDe(fechaISO, seg) { return new Date(fechaISO + "T00:00:00-03:00").getTime() + seg * 1000; }
   function segDelDia(ts, fechaISO) { return (new Date(ts).getTime() - new Date(fechaISO + "T00:00:00-03:00").getTime()) / 1000; }
   function ahoraSeg() { return segDelDia(Date.now(), hoyISO()); }
+  // Horas estimadas en vivo de un recorrido (ver Motor.proyectar). Otros días: el plan tal cual.
+  function proyeccion(v, ps, opc) {
+    if (!v || typeof Motor === "undefined" || !Motor.proyectar) { return null; }
+    var f = opc.fecha || hoyISO(), hoy = f === hoyISO(), m = v.metricas || {};
+    var lista = ps.filter(function (p) { return p.estado !== "cancelada"; }).slice().sort(function (a, b) { return (a.orden || 0) - (b.orden || 0); });
+    var inicio = v.salida ? segDelDia(v.salida, f) : m.inicio != null ? m.inicio : null;
+    if (inicio == null) { return null; }
+    var pos = opc.pos && hoy ? { lat: opc.pos.lat, lng: opc.pos.lng, t: opc.pos.en ? segDelDia(opc.pos.en, f) : ahoraSeg() } : null;
+    try {
+      return Motor.proyectar({ ahora: hoy ? ahoraSeg() : -1e9, inicio: inicio, iniciado: v.iniciado_en ? segDelDia(v.iniciado_en, f) : null,
+        enCurso: v.estado === "en_curso", finalizado: v.estado === "finalizado" || v.estado === "cancelado", base: opc.base || null, pos: pos,
+        tolMin: opc.tolMin || 0, finPlan: m.fin != null ? m.fin : null,
+        paradas: lista.map(function (p) { return { id: p.id, lat: p.lat, lng: p.lng, eta: p.eta ? segDelDia(p.eta, f) : null, horaMin: p.hora ? minDeHora(p.hora) : null,
+          estado: p.estado, resuelta: p.resuelta_en ? segDelDia(p.resuelta_en, f) : null }; }) });
+    } catch (e) { return null; }
+  }
+  // "+12 min" si viene atrasado, "−5 min" adelantado, "" si va a horario (±3 min)
+  function atraso(seg) { if (seg == null || Math.abs(seg) < 180) { return ""; } var m = Math.round(Math.abs(seg) / 60); var t = m >= 60 ? Math.floor(m / 60) + " h " + (m % 60 ? (m % 60) + " min" : "") : m + " min"; return (seg > 0 ? "+" : "−") + t.trim(); }
   function iniciales(n) { return String(n || "?").trim().split(/\s+/).slice(0, 2).map(function (x) { return x[0]; }).join("").toUpperCase(); }
   function norm(s) { return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); }
   function resaltar(txt, q) {
@@ -1461,7 +1516,7 @@ var UI = (function () {
 
   return { h: h, add: add, limpiar: limpiar, reemplazar: reemplazar, ic: ic, svgLogo: svgLogo, GM: GM, WZ: WZ, TZ: TZ,
     hoyISO: hoyISO, sumarDias: sumarDias, fechaLarga: fechaLarga, fechaCorta: fechaCorta, fechaSub: fechaSub, hhmm: hhmm, horaDe: horaDe,
-    dur: dur, km: km, hace: hace, minDeHora: minDeHora, epochDe: epochDe, segDelDia: segDelDia, ahoraSeg: ahoraSeg, iniciales: iniciales,
+    dur: dur, km: km, hace: hace, minDeHora: minDeHora, epochDe: epochDe, segDelDia: segDelDia, ahoraSeg: ahoraSeg, proyeccion: proyeccion, atraso: atraso, iniciales: iniciales,
     norm: norm, resaltar: resaltar, debounce: debounce, toast: toast, drawer: drawer, modal: modal, sheet: sheet, confirmar: confirmar,
     popover: popover, conCarga: conCarga, mensajeError: mensajeError, celebrar: celebrar, contar: contar };
 })();
@@ -1761,8 +1816,21 @@ var Datos = (function () {
   }
   function chk(r) { if (r.error) { throw r.error; } return r.data; }
 
+  // Librería de Supabase con verificación de integridad (SRI): si el CDN la alterara, el navegador no la ejecuta.
+  function cargarSupabase() {
+    if (window.supabase && window.supabase.createClient) { return Promise.resolve(window.supabase); }
+    return new Promise(function (ok, mal) {
+      var s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js";
+      s.integrity = "sha384-xPW3QHswsICVC2mW6BFNwMbhpLkbZ133fKOhxNx3QGGgAOJfL3O9t8r2aWn1aez6";
+      s.crossOrigin = "anonymous"; s.referrerPolicy = "no-referrer";
+      s.onload = function () { window.supabase && window.supabase.createClient ? ok(window.supabase) : mal(new Error("No se pudo cargar")); };
+      s.onerror = function () { mal(new Error("No se pudo cargar la conexión segura")); };
+      document.head.appendChild(s);
+    });
+  }
   async function iniciar() {
-    var mod = await conTiempo(import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/+esm"), 15000);
+    var mod = await conTiempo(cargarSupabase(), 15000);
     sb = mod.createClient(CFG.url, CFG.key, {
       auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "pkce", storageKey: "ruta-sesion" },
       realtime: { params: { eventsPerSecond: 5 } }
@@ -1780,7 +1848,7 @@ var Datos = (function () {
     try { if (location.search.indexOf("code=") >= 0) { history.replaceState(null, "", location.pathname); } } catch (e) {}
     return yo;
   }
-  function alCambiarSesion(cb) { sb.auth.onAuthStateChange(function (ev, s) { yo = s ? s.user : null; cb(ev, yo); }); }
+  function alCambiarSesion(cb) { sb.auth.onAuthStateChange(function (ev, s) { yo = s ? s.user : null; if (ev === "SIGNED_OUT") { limpiarLocal(); } cb(ev, yo); }); }
   async function entrar(email, clave) { var r = await sb.auth.signInWithPassword({ email: email.trim(), password: clave }); chk(r); yo = r.data.user; return yo; }
   async function crearAdmin(nombre, email, clave, invitacion) {
     var datos = { nombre: nombre }; if (invitacion) { datos.invitacion = invitacion; }
@@ -1792,7 +1860,9 @@ var Datos = (function () {
   async function crearInvitacion(rol, nombre) { return chk(await sb.from("invitaciones").insert({ codigo: codigoNuevo(), rol: rol, nombre: nombre || null }).select().single()); }
   async function invitaciones() { return chk(await sb.from("invitaciones").select("*").is("usada_por", null).gt("vence", new Date().toISOString()).order("creado", { ascending: false })); }
   async function borrarInvitacion(id) { return chk(await sb.from("invitaciones").delete().eq("id", id)); }
-  async function salir() { await sb.auth.signOut(); yo = null; }
+  // Al salir no queda nada del negocio en el dispositivo (direcciones buscadas, cotización, sesión).
+  function limpiarLocal() { ["ruta-geo-v1", "ruta-cot", "ruta-sesion"].forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} }); try { sessionStorage.clear(); } catch (e) {} }
+  async function salir() { try { await sb.auth.signOut(); } catch (e) {} yo = null; limpiarLocal(); }
   async function hayAdmin() { return chk(await sb.rpc("hay_admin")); }
   async function miPerfil() { return chk(await sb.from("perfiles").select("*").eq("id", yo.id).maybeSingle()); }
 
@@ -2521,15 +2591,16 @@ var Planillas = (function () {
       if (!e) { return s; }
       if (e.b) { s.fontWeight = "700"; } if (e.i) { s.fontStyle = "italic"; }
       if (e.u || e.t) { s.textDecoration = [e.u ? "underline" : "", e.t ? "line-through" : ""].join(" ").trim(); }
-      if (e.c) { s.color = "#" + e.c; } if (e.f) { s.background = "#" + e.f; }
-      if (e.z) { s.fontSize = (e.z * 4 / 3 * z).toFixed(1) + "px"; }
+      var hex = function (c) { return typeof c === "string" && /^[0-9A-Fa-f]{6}$/.test(c); };
+      if (hex(e.c)) { s.color = "#" + e.c; } if (hex(e.f)) { s.background = "#" + e.f; }
+      if (typeof e.z === "number" && e.z > 0 && e.z < 200) { s.fontSize = (e.z * 4 / 3 * z).toFixed(1) + "px"; }
       if (e.h) { s.textAlign = e.h === "r" ? "right" : e.h === "c" ? "center" : e.h === "j" ? "justify" : "left"; }
       if (e.v) { s.verticalAlign = e.v === "c" ? "middle" : "top"; }
       if (e.w) { s.whiteSpace = "pre-wrap"; s.wordBreak = "break-word"; }
-      if (e.in) { s.paddingLeft = (4 + e.in * 9 * z) + "px"; }
+      if (typeof e.in === "number" && e.in > 0 && e.in < 50) { s.paddingLeft = (4 + e.in * 9 * z) + "px"; }
       if (e.bo) {
         var ancho = function (t) { return /medium|dashDot|mediumDash/.test(t) ? 2 : /thick|double/.test(t) ? 3 : 1; }, linea = function (t) { return /dash|dot/i.test(t) ? "dashed" : t === "double" ? "double" : "solid"; };
-        [["l", "Left"], ["r", "Right"], ["t", "Top"], ["b", "Bottom"]].forEach(function (p) { var b = e.bo[p[0]]; if (b) { s["border" + p[1]] = ancho(b[0]) + "px " + linea(b[0]) + " #" + b[1]; } });
+        [["l", "Left"], ["r", "Right"], ["t", "Top"], ["b", "Bottom"]].forEach(function (p) { var b = e.bo[p[0]]; if (b && typeof b[0] === "string" && hex(b[1])) { s["border" + p[1]] = ancho(b[0]) + "px " + linea(b[0]) + " #" + b[1]; } });
       }
       return s;
     }
@@ -2700,6 +2771,24 @@ var A = (function () {
       });
     });
     return { usd: carga, falta: falta };
+  }
+
+  // Horas estimadas en vivo de un recorrido (se corrigen solas si se atrasa o adelanta)
+  function proy(v) {
+    if (!v) { return null; }
+    var ps = S.paradas.filter(function (p) { return p.viaje_id === v.id; });
+    var u = (S.ubic || []).find(function (x) { return x.repartidor_id === v.repartidor_id && x.viaje_id === v.id; });
+    return UI.proyeccion(v, ps, { fecha: S.fecha, base: base(), pos: u || null, tolMin: S.config ? S.config.tolerancia_min : 0 });
+  }
+  // Hora de llegada a mostrar para una parada: real si ya se resolvió, si no la estimada en vivo.
+  function etaParada(p, pr) {
+    if (p.resuelta_en) { return { seg: UI.segDelDia(p.resuelta_en, S.fecha), real: true }; }
+    var plan = p.eta ? UI.segDelDia(p.eta, S.fecha) : null;
+    if (pr === undefined) { pr = p.viaje_id ? proy(viajeDe(p.viaje_id)) : null; }
+    var vivo = pr && pr.etas[p.id] != null ? pr.etas[p.id] : null;
+    var seg = vivo != null ? vivo : plan;
+    var tarde = p.hora && seg != null && seg > (UI.minDeHora(p.hora) + (S.config ? S.config.tolerancia_min : 30)) * 60;
+    return { seg: seg, plan: plan, dif: vivo != null && plan != null ? vivo - plan : 0, tarde: !!tarde };
   }
 
   /* ---------------- carga de datos ---------------- */
@@ -2897,7 +2986,7 @@ var A = (function () {
   }
 
   return { S: S, vistas: vistas, iniciar: iniciar, ir: ir, refrescar: refrescar, cargarBase: cargarBase, repDe: repDe, colorRep: colorRep, viajeDe: viajeDe,
-    repartidores: repartidores, tasas: tasas, tope: tope, topeNum: topeNum, base: base, pillEstado: pillEstado, chipMonto: chipMonto, usdParada: usdParada,
+    repartidores: repartidores, tasas: tasas, tope: tope, topeNum: topeNum, base: base, proy: proy, etaParada: etaParada, pillEstado: pillEstado, chipMonto: chipMonto, usdParada: usdParada,
     cargaViaje: cargaViaje, ESTADOS: ESTADOS, PALETA: PALETA, pintarCot: pintarCot, cambiarFecha: cambiarFecha };
 })();
 
@@ -2941,7 +3030,11 @@ var A = (function () {
       var enCurso = S.viajes.filter(function (v) { return v.estado === "en_curso"; });
       var calle = 0n; enCurso.forEach(function (v) { calle += A.cargaViaje(v).usd; });
       var maxV = 0n, excede = false; S.viajes.forEach(function (v) { var c = A.cargaViaje(v).usd; if (c > maxV) { maxV = c; } if (c > Motor.dec(A.tope())) { excede = true; } });
-      var fin = 0; S.viajes.forEach(function (v) { if (v.metricas && v.metricas.fin) { fin = Math.max(fin, v.metricas.fin); } });
+      var fin = 0, peor = 0; S.viajes.forEach(function (v) {
+        if (v.estado === "cancelado") { return; }
+        var pr = v.estado !== "finalizado" ? A.proy(v) : null;
+        var f = pr && pr.fin != null ? pr.fin : v.estado === "finalizado" && v.finalizado_en ? UI.segDelDia(v.finalizado_en, S.fecha) : v.metricas && v.metricas.fin;
+        if (f) { fin = Math.max(fin, f); } if (pr && pr.atrasoFin > peor) { peor = pr.atrasoFin; } });
       var sinAsig = act.filter(function (p) { return !p.viaje_id; }).length;
       var pct = act.length ? Math.round(res / act.length * 100) : 0;
       UI.reemplazar(kpis,
@@ -2951,7 +3044,7 @@ var A = (function () {
           h("div.barra", h("i", { style: { width: (S.viajes.length ? enCurso.length / S.viajes.length * 100 : 0) + "%", background: "var(--accent)" } }))),
         h("div.kpi" + (excede ? ".alerta" : ""), h("div.k", ic("dolar", "sm"), "En la calle"), h("div.v", h("span.num", "US$ " + Motor.fmtNum(calle, 0))),
           h("div.barra", h("i", { style: { width: Math.min(100, Motor.aNumero(maxV) / A.topeNum() * 100) + "%", background: excede ? "var(--bad)" : "linear-gradient(90deg,var(--ok),var(--warn))" } }))),
-        h("div.kpi", h("div.k", ic("reloj", "sm"), "Fin estimado"), h("div.v", h("span.num", fin ? UI.hhmm(fin) : "—"), h("small", fin && S.fecha === UI.hoyISO() && fin > UI.ahoraSeg() ? "en " + UI.dur(fin - UI.ahoraSeg()) : ""))));
+        h("div.kpi", h("div.k", ic("reloj", "sm"), "Fin estimado"), h("div.v", h("span.num", fin ? UI.hhmm(fin) : "—"), h("small", { style: { color: UI.atraso(peor) ? "var(--warn)" : "" } }, UI.atraso(peor) ? UI.atraso(peor) : fin && S.fecha === UI.hoyISO() && fin > UI.ahoraSeg() ? "en " + UI.dur(fin - UI.ahoraSeg()) : ""))));
     }
 
     function pintarViajes() {
@@ -2969,22 +3062,23 @@ var A = (function () {
         var cur = ps.find(function (p) { return p.estado === "en_camino" || p.estado === "asignada"; });
         var carga = A.cargaViaje(v), pct = Math.min(100, Motor.aNumero(carga.usd) / A.topeNum() * 100), excede = carga.usd > Motor.dec(A.tope());
         var est = v.estado === "en_curso" ? h("span.pill.acc.vivo", h("span.dot"), "En curso") : v.estado === "finalizado" ? h("span.pill.ok", h("span.dot"), "Finalizado") : h("span.pill.info", h("span.dot"), "Por salir");
-        var sel = S.selViaje === v.id;
+        var sel = S.selViaje === v.id, pr = v.estado !== "finalizado" ? A.proy(v) : null;
+        var finV = pr && pr.fin != null ? pr.fin : v.metricas && v.metricas.fin, dif = pr ? UI.atraso(pr.atrasoFin) : "";
         var card = h("article.viaje" + (sel ? ".sel" : ""), { style: { "--c": rep.color }, onclick: function () { S.selViaje = sel ? null : v.id; pintarViajes(); pintarMapa(true); } },
           h("div.viaje-h", h("span.av", { style: { "--c": rep.color } }, UI.iniciales(rep.nombre)),
-            h("div.n", h("b", rep.nombre), h("span", hechas + " de " + ps.length + " paradas" + (v.metricas && v.metricas.fin ? " · fin " + UI.hhmm(v.metricas.fin) : ""))), est),
+            h("div.n", h("b", rep.nombre), h("span", hechas + " de " + ps.length + " paradas" + (finV ? " · fin " + UI.hhmm(finV) : ""),
+              dif ? h("b", { style: { color: pr.atrasoFin > 0 ? "var(--warn)" : "var(--ok)", fontWeight: 600 } }, " " + dif) : null)), est),
           h("div.segs", ps.map(function (p) { return h("i", { class: p.estado === "completada" ? "ok" : p.estado === "fallida" ? "bad" : p === cur && v.estado === "en_curso" ? "cur" : "" }); })),
           h("div.carga", h("span", carga.salida ? "Sale con" : "Lleva"), h("div.med" + (excede ? ".bad" : ""), h("i", { style: { width: pct + "%" } })),
             h("b.num", { style: { color: excede ? "var(--bad)" : "var(--ink)" } }, "US$ " + Motor.fmtCompacto(carga.usd))));
         if (sel) {
           card.appendChild(h("div.tl", ps.map(function (p) {
             var cls = p.estado === "completada" ? "ok" : p.estado === "fallida" ? "bad" : p === cur && v.estado === "en_curso" ? "cur" : "";
-            var etaS = p.eta ? UI.segDelDia(p.eta, S.fecha) : null;
-            var tarde = p.hora && !p.resuelta_en && etaS != null && etaS > (UI.minDeHora(p.hora) + S.config.tolerancia_min) * 60;
+            var e = A.etaParada(p, pr), etaS = e.seg, tarde = !e.real && e.tarde, d = !e.real ? UI.atraso(e.dif) : "";
             return h("div.tl-i." + (cls || "x"), { onclick: function (e) { e.stopPropagation(); A.editorParada(p); }, style: { cursor: "pointer" } },
               h("span.tl-n", cls === "ok" ? ic("check", "sm") : String(p.orden || "·")),
               h("div", { style: { minWidth: 0 } }, h("b", p.cliente_nombre), h("small", p.direccion), h("div", { style: { display: "flex", gap: "4px", marginTop: "5px", flexWrap: "wrap" } }, (p.montos || []).map(function (m) { return A.chipMonto(m); }))),
-              h("div.hr-eta", p.resuelta_en ? UI.horaDe(p.resuelta_en) : etaS != null ? UI.hhmm(etaS) : "—", h("small", { style: { display: "block", color: tarde ? "var(--warn)" : "" } }, p.resuelta_en ? "real" : p.hora ? (tarde ? "tarde · pide " : "pide ") + p.hora.slice(0, 5) : "estimada")));
+              h("div.hr-eta", etaS != null ? UI.hhmm(etaS) : "—", h("small", { style: { display: "block", color: tarde || (d && e.dif > 0) ? "var(--warn)" : "" } }, e.real ? "real" : p.hora ? (tarde ? "tarde · pide " : "pide ") + p.hora.slice(0, 5) : d ? d : "estimada")));
           })));
         }
         lista.appendChild(card);
@@ -3006,6 +3100,16 @@ var A = (function () {
           rep && rep.telefono ? h("a.btn.sm", { href: "tel:" + rep.telefono, "aria-label": "Llamar a " + rep.nombre }, ic("telefono", "sm")) : null,
           h("button.btn.sm", { onclick: async function () { await Datos.resolverIncidente(i.id); i.resuelto = true; pintarAlertas(); A.refrescar(); UI.toast("Marcado como resuelto"); } }, ic("check", "sm"), "Resuelto")));
       });
+      if (S.fecha === UI.hoyISO()) {
+        S.viajes.forEach(function (v) {
+          if (v.estado === "finalizado" || v.estado === "cancelado") { return; }
+          var pr = A.proy(v); if (!pr || pr.atrasoFin < Math.max(10, S.config ? S.config.tolerancia_min : 10) * 60) { return; }
+          var rep = A.repDe(v.repartidor_id) || {};
+          alertas.appendChild(h("div.alerta.warn.glass", ic("reloj"), h("div.t", h("b", (rep.nombre || "Un recorrido") + " viene atrasado " + UI.atraso(pr.atrasoFin).slice(1)),
+            h("span", "Nuevo fin estimado " + UI.hhmm(pr.fin) + " (el plan decía " + UI.hhmm(v.metricas.fin) + ")")),
+            rep.telefono ? h("a.btn.sm", { href: "tel:" + rep.telefono, "aria-label": "Llamar a " + rep.nombre }, ic("telefono", "sm")) : null));
+        });
+      }
       var excedidos = S.viajes.filter(function (v) { return v.estado !== "finalizado" && A.cargaViaje(v).usd > Motor.dec(A.tope()); });
       excedidos.forEach(function (v) {
         var rep = A.repDe(v.repartidor_id) || {};
@@ -3030,8 +3134,7 @@ var A = (function () {
       var pts = [];
       mapa.paradas(S.paradas.filter(function (p) { return p.estado !== "cancelada"; }).map(function (p) {
         var v = A.viajeDe(p.viaje_id); pts.push(p);
-        var etaS = p.eta ? UI.segDelDia(p.eta, S.fecha) : null;
-        var tarde = p.hora && etaS != null && p.estado === "asignada" && etaS > (UI.minDeHora(p.hora) + (S.config ? S.config.tolerancia_min : 30)) * 60;
+        var tarde = (p.estado === "asignada" || p.estado === "en_camino") && A.etaParada(p).tarde;
         return { id: p.id, lat: p.lat, lng: p.lng, num: p.orden || "", color: v ? A.colorRep(v.repartidor_id) : null,
           clase: [p.estado === "completada" ? "hecha" : "", p.estado === "fallida" ? "falla" : "", !v ? "libre" : "", tarde ? "tarde" : "", S.selViaje && p.viaje_id === S.selViaje ? "sel" : ""].join(" ").trim(),
           titulo: p.cliente_nombre + " · " + p.direccion, onClick: function () { A.editorParada(p); } };
@@ -3059,7 +3162,7 @@ var A = (function () {
       if (modoG === "hora") {
         var porH = {}; S.paradas.forEach(function (p) {
           if (p.estado === "cancelada") { return; }
-          var t = p.eta ? UI.segDelDia(p.eta, S.fecha) / 3600 : p.hora ? UI.minDeHora(p.hora) / 60 : null; if (t == null) { return; }
+          var es = A.etaParada(p).seg; var t = es != null ? es / 3600 : p.hora ? UI.minDeHora(p.hora) / 60 : null; if (t == null) { return; }
           var k = Math.floor(t); porH[k] = porH[k] || { h: k, total: 0, hechas: 0 }; porH[k].total++; if (p.estado === "completada" || p.estado === "fallida") { porH[k].hechas++; }
         });
         var ks = Object.keys(porH).map(Number); var datos = [];
@@ -3078,7 +3181,8 @@ var A = (function () {
 
     function actualizar() { pintarKPIs(); pintarViajes(); pintarAlertas(); pintarGraf(); if (S.cargado) { pintarMapa(false); } }
     actualizar();
-    var t = setInterval(pintarKPIs, 30000);
+    // cada 30 s se recalculan las horas estimadas con lo que va pasando
+    var t = setInterval(function () { if (!S.cargado) { return; } pintarKPIs(); pintarViajes(); pintarAlertas(); }, 30000);
     return { actualizar: actualizar, salir: function () { clearInterval(t); mapa.destruir(); }, retema: function () { mapa.retema(); } };
   };
 })();
@@ -3612,7 +3716,7 @@ var A = (function () {
       var v = A.viajeDe(p.viaje_id), rep = v ? A.repDe(v.repartidor_id) : null;
       extra = h("div", { style: { display: "flex", alignItems: "center", gap: "10px", padding: "12px 14px", borderRadius: "14px", background: "var(--surface-2)", border: "1px solid var(--line)" } },
         A.pillEstado(p.estado), rep ? h("span", { style: { display: "flex", alignItems: "center", gap: "8px", fontSize: "13px" } }, h("span.av.sm", { style: { "--c": rep.color } }, UI.iniciales(rep.nombre)), rep.nombre, p.orden ? " · parada " + p.orden : "") : h("span.ayuda", "Sin recorrido"),
-        h("span", { style: { marginLeft: "auto", fontSize: "12.5px", color: "var(--muted)" } }, p.resuelta_en ? "resuelta " + UI.horaDe(p.resuelta_en) : p.eta ? "llega ~" + UI.horaDe(p.eta) : ""));
+        h("span", { style: { marginLeft: "auto", fontSize: "12.5px", color: "var(--muted)" } }, p.resuelta_en ? "resuelta " + UI.horaDe(p.resuelta_en) : p.eta ? (function () { var e = A.etaParada(p), d = UI.atraso(e.dif); return "llega ~" + UI.hhmm(e.seg) + (d ? " (" + d + ")" : ""); })() : ""));
     }
 
     var cuerpo = [
@@ -4243,6 +4347,25 @@ var R = (function () {
   function viajeActual() { return S.viajes.find(function (v) { return v.estado === "en_curso"; }) || S.viajes.find(function (v) { return v.estado === "asignado"; }) || S.viajes[S.viajes.length - 1]; }
   function paradasDe(v) { return S.paradas.filter(function (p) { return p.viaje_id === v.id; }).sort(function (a, b) { return a.orden - b.orden; }); }
   function base() { var c = S.config; return c && c.base_lat != null ? { lat: c.base_lat, lng: c.base_lng } : null; }
+  // Horas estimadas en vivo (se corrigen solas con lo que va pasando y con tu ubicación)
+  function proy(v) { return UI.proyeccion(v, paradasDe(v), { fecha: UI.hoyISO(), base: base(), pos: S.pos, tolMin: S.config ? S.config.tolerancia_min : 0 }); }
+  function etaP(p, pr) {
+    if (p.resuelta_en) { return { txt: UI.horaDe(p.resuelta_en), real: true, dif: 0, tarde: false }; }
+    var plan = p.eta ? UI.segDelDia(p.eta, UI.hoyISO()) : null, vivo = pr && pr.etas[p.id] != null ? pr.etas[p.id] : null, seg = vivo != null ? vivo : plan;
+    var tarde = p.hora && seg != null && seg > (UI.minDeHora(p.hora) + (S.config ? S.config.tolerancia_min : 30)) * 60;
+    return { seg: seg, txt: seg != null ? UI.hhmm(seg) : "", dif: vivo != null && plan != null ? vivo - plan : 0, tarde: !!tarde };
+  }
+  function refrescarEtas() {
+    var x = S.vivo; if (!x || !x.v || !document.body.contains(x.finEl)) { return; }
+    var pr = proy(x.v), fin = pr && pr.fin != null ? pr.fin : x.v.metricas && x.v.metricas.fin, d = pr ? UI.atraso(pr.atrasoFin) : "";
+    x.finEl.textContent = fin ? UI.hhmm(fin) : "—";
+    x.difEl.textContent = d; x.difEl.style.color = pr && pr.atrasoFin > 0 ? "var(--warn)" : "var(--ok)";
+    x.items.forEach(function (it) {
+      var e = etaP(it.p, pr); it.eEl.textContent = e.txt;
+      if (!e.real) { var dd = UI.atraso(e.dif); it.sEl.textContent = it.p.hora ? (e.tarde ? "tarde · pide " : "pide ") + it.p.hora.slice(0, 5) : dd; it.sEl.style.color = e.tarde || (dd && e.dif > 0) ? "var(--warn)" : "var(--faint)"; }
+    });
+    if (x.proxEl && x.proxP) { var ep = etaP(x.proxP, pr); x.proxEl.textContent = ep.txt ? "Llegás ~" + ep.txt : ""; }
+  }
   function encima(v, ps) {
     var t = {};
     ps.forEach(function (p) { (p.montos || []).forEach(function (m) {
@@ -4277,6 +4400,7 @@ var R = (function () {
     pintar();
     Datos.escuchar(["paradas", "viajes"], function () { recargar(); });
     document.addEventListener("visibilitychange", function () { if (!document.hidden) { recargar(); pedirWake(); } });
+    setInterval(refrescarEtas, 30000);
   }
 
   /* ---------- ubicación y pantalla encendida durante el recorrido ---------- */
@@ -4284,7 +4408,7 @@ var R = (function () {
     if (!("geolocation" in navigator)) { return; }
     if (activo && S.geoId == null) {
       S.geoId = navigator.geolocation.watchPosition(function (p) {
-        S.pos = { lat: p.coords.latitude, lng: p.coords.longitude };
+        S.pos = { lat: p.coords.latitude, lng: p.coords.longitude, en: new Date().toISOString() };
         if (S.mapa) { S.mapa.vivosSet([{ id: "yo", lat: S.pos.lat, lng: S.pos.lng, color: S.perfil.color, nombre: S.perfil.nombre }]); }
         if (Date.now() - S.ultEnvio > 20000) { S.ultEnvio = Date.now(); Datos.reportarUbicacion(S.pos.lat, S.pos.lng, p.coords.accuracy).catch(function () {}); }
       }, function () {}, { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 });
@@ -4343,12 +4467,14 @@ var R = (function () {
 
     // hero
     var enc = encima(v, ps), monedas = Object.keys(enc).filter(function (k) { return enc[k] > 0n; });
-    var fin = v.metricas && v.metricas.fin;
+    var pr = proy(v), fin = pr && pr.fin != null ? pr.fin : v.metricas && v.metricas.fin;
+    var finEl = h("b", fin ? UI.hhmm(fin) : "—"), difEl = h("small", { style: { display: "block", fontSize: "11px", color: pr && pr.atrasoFin > 0 ? "var(--warn)" : "var(--ok)" } }, pr ? UI.atraso(pr.atrasoFin) : "");
+    S.vivo = { v: v, finEl: finEl, difEl: difEl, items: [], proxEl: null, proxP: null };
     var an = h("div.anillo", Graf.anillo(hechas.length, ps.length, col), h("div.v", h("span", hechas.length + "/" + ps.length), h("small", "paradas")));
     cont.appendChild(h("section.hero", { style: { "--c": col } },
       h("div.fila", an, h("div.dat",
         h("div", h("small", v.estado === "asignado" ? "Salida" : "Estado"), h("b", v.estado === "asignado" ? (v.salida ? UI.horaDe(v.salida) : "—") : v.estado === "en_curso" ? "En curso" : "Terminado")),
-        h("div", h("small", "Fin estimado"), h("b", fin ? UI.hhmm(fin) : "—")),
+        h("div", h("small", "Fin estimado"), finEl, difEl),
         h("div", h("small", "Recorrido"), h("b.num", v.metricas && v.metricas.dist ? UI.km(v.metricas.dist) : "—")),
         h("div", h("small", "Quedan"), h("b", String(ps.length - hechas.length))))),
       h("div.encima", h("div.h", h("span", v.estado === "asignado" ? "Salís con" : "Llevás encima"), h("span", ic("escudo", "sm"))),
@@ -4380,11 +4506,14 @@ var R = (function () {
     if (resto.length) {
       cont.appendChild(h("section.rp-sec", h("h4", "Recorrido completo"), h("div.rp-lista", ps.map(function (p) {
         var cls = p.estado === "completada" ? "ok" : p.estado === "fallida" ? "bad" : "";
-        var tarde = p.hora && !p.resuelta_en && p.eta && UI.segDelDia(p.eta, UI.hoyISO()) > (UI.minDeHora(p.hora) + (S.config ? S.config.tolerancia_min : 30)) * 60;
+        var e = etaP(p, pr), dd = e.real ? "" : UI.atraso(e.dif);
+        var eEl = h("span", e.txt), sEl = h("small", { style: { display: "block", fontSize: "11px", color: e.tarde || (dd && e.dif > 0) ? "var(--warn)" : "var(--faint)", fontFamily: "var(--font)" } },
+          e.real ? (cls === "ok" ? "hecha" : "problema") : p.hora ? (e.tarde ? "tarde · pide " : "pide ") + p.hora.slice(0, 5) : dd);
+        if (!e.real) { S.vivo.items.push({ p: p, eEl: eEl, sEl: sEl }); }
         return h("div.rp-it." + (cls || "x"), { style: p === sig ? { opacity: 1 } : {} },
           h("span.n", cls === "ok" ? ic("check", "sm") : cls === "bad" ? ic("x", "sm") : String(p.orden)),
           h("div", { style: { minWidth: 0 } }, h("b", p.cliente_nombre), h("small", p.direccion)),
-          h("div.e", p.resuelta_en ? UI.horaDe(p.resuelta_en) : p.eta ? UI.horaDe(p.eta) : "", h("small", { style: { display: "block", fontSize: "11px", color: tarde ? "var(--warn)" : "var(--faint)", fontFamily: "var(--font)" } }, p.resuelta_en ? (cls === "ok" ? "hecha" : "problema") : p.hora ? "pide " + p.hora.slice(0, 5) : "")));
+          h("div.e", eEl, sEl));
       }))));
     }
     cont.appendChild(h("div", { style: { height: "20px" } }));
@@ -4398,7 +4527,7 @@ var R = (function () {
 
   function tarjetaProxima(v, p, ps) {
     var col = S.perfil.color;
-    var ets = p.eta ? UI.horaDe(p.eta) : null;
+    var ep = etaP(p, proy(v)), ets = ep.txt || null;
     var tardeMin = p.hora ? Math.round((UI.ahoraSeg() - (UI.minDeHora(p.hora) + (S.config ? S.config.tolerancia_min : 30)) * 60) / 60) : null;
     function marcarCamino() { if (p.estado === "asignada") { Datos.marcarParada(p.id, "en_camino").then(recargar).catch(function () {}); } }
     var slider = deslizar(async function () {
@@ -4410,8 +4539,8 @@ var R = (function () {
     });
     return h("section.prox", { style: { "--c": col } },
       h("div.prox-h", h("span", "Parada " + p.orden + " de " + ps.length), h("span", { style: { flex: 1 } }),
-        p.hora ? h("span.pill" + (tardeMin > 0 ? ".bad" : ".info"), ic("reloj", "sm"), "Pide " + p.hora.slice(0, 5)) : ets ? h("span.pill", ic("reloj", "sm"), "~" + ets) : null),
-      h("div.prox-b", h("h2", p.cliente_nombre), h("p.dir", ic("pin", "sm"), h("span", p.direccion, p.detalle ? h("b", { style: { display: "block", color: "var(--ink)" } }, p.detalle) : null)),
+        p.hora ? h("span.pill" + (tardeMin > 0 ? ".bad" : ".info"), ic("reloj", "sm"), "Pide " + p.hora.slice(0, 5)) : null),
+      h("div.prox-b", (function () { var el = h("div", { style: { fontSize: "12.5px", color: "var(--muted)", marginBottom: "2px" } }, ets ? "Llegás ~" + ets : ""); if (S.vivo) { S.vivo.proxEl = el; S.vivo.proxP = p; } return el; })(), h("h2", p.cliente_nombre), h("p.dir", ic("pin", "sm"), h("span", p.direccion, p.detalle ? h("b", { style: { display: "block", color: "var(--ink)" } }, p.detalle) : null)),
         p.notas ? h("div.meta", h("span.pill.warn", ic("info", "sm"), p.notas)) : null),
       h("div.prox-m", (p.montos || []).map(function (m) {
         return h("div.m." + m.sentido, h("div.ic", ic(m.sentido)), h("div", h("small", m.sentido === "entrega" ? "Entregás" : "Retirás"), h("b", Motor.fmtDinero(m.importe, m.moneda, { compacto: true }))));
@@ -4464,7 +4593,7 @@ var R = (function () {
           var wa = S.config && S.config.admin_whatsapp;
           var txt = "⚠️ " + st.motivo + "\n" + S.perfil.nombre + " · parada " + p.orden + "\nCliente: " + p.cliente_nombre + "\n" + p.direccion + (st.nota ? "\n\n" + st.nota : "") + (st.fallida ? "\n\n❌ No se pudo completar" : "") + (S.pos ? "\n📍 https://maps.google.com/?q=" + S.pos.lat.toFixed(5) + "," + S.pos.lng.toFixed(5) : "");
           sh.cerrar();
-          if (wa) { location.href = "https://wa.me/" + wa + "?text=" + encodeURIComponent(txt); }
+          wa = String(wa || "").replace(/\D/g, ""); if (wa) { location.href = "https://wa.me/" + wa + "?text=" + encodeURIComponent(txt); }
           UI.toast("Problema registrado" + (wa ? "" : ". El administrador lo ve en su pantalla."), "info");
           if (st.fallida) { await cargar(); var n = paradasDe(v).find(function (x) { return x.estado === "asignada"; }); if (n) { await Datos.marcarParada(n.id, "en_camino").catch(function () {}); } }
           await cargar(); pintar();
@@ -4567,6 +4696,8 @@ var C = (function () {
    ===================================================================== */
 (function () {
   "use strict";
+  // Nadie puede mostrar Ruta dentro de otra página (evita engaños de "clic invisible").
+  if (window.top !== window.self) { document.documentElement.innerHTML = ""; try { window.top.location = window.location.href; } catch (e) {} return; }
   var h = UI.h, ic = UI.ic;
   var raiz = document.getElementById("app");
   try { var t = localStorage.getItem("ruta-tema"); if (t) { document.documentElement.dataset.theme = t; } } catch (e) {}
