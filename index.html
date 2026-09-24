@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Ruta">
 <meta name="robots" content="noindex,nofollow">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-JKwrkmkUqom/MYYi4qnqLizGXfnEkrr65sz7Ty23Ir8=' https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://tiles.openfreemap.org; worker-src blob:; child-src blob:; connect-src 'self' https://hgwnclqscytyozqkccro.supabase.co wss://hgwnclqscytyozqkccro.supabase.co https://tiles.openfreemap.org https://dolarapi.com https://api.bluelytics.com.ar https://photon.komoot.io https://router.project-osrm.org https://servicios.usig.buenosaires.gob.ar https://apis.datos.gob.ar https://nominatim.openstreetmap.org; base-uri 'none'; form-action 'self'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-1TkZ6HGmp30mJeiBX/C3/AXn185GQnDQBtPVYsaHBF8=' https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://tiles.openfreemap.org; worker-src blob:; child-src blob:; connect-src 'self' https://hgwnclqscytyozqkccro.supabase.co wss://hgwnclqscytyozqkccro.supabase.co https://tiles.openfreemap.org https://dolarapi.com https://api.bluelytics.com.ar https://photon.komoot.io https://router.project-osrm.org https://servicios.usig.buenosaires.gob.ar https://apis.datos.gob.ar https://nominatim.openstreetmap.org; base-uri 'none'; form-action 'self'; object-src 'none'">
 <meta name="description" content="Logística de traslados: rutas, repartidores y seguimiento en vivo.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icono.svg" type="image/svg+xml">
@@ -511,6 +511,7 @@ select.inp{appearance:none;padding-right:34px;background-image:url("data:image/s
 .encima .h{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:8px}
 .encima .ms{display:flex;gap:8px;flex-wrap:wrap}
 .encima .ms span{font:620 14px var(--mono);padding:6px 10px;border-radius:10px;background:var(--surface-2)}
+button.encima{transition:border-color .15s} button.encima:hover,button.encima:focus-visible{border-color:var(--line-3)}
 .prox{margin:14px 16px 0;border-radius:26px;background:var(--panel);border:1px solid color-mix(in oklab,var(--c,var(--accent)) 40%,var(--line-2));box-shadow:0 20px 50px -24px color-mix(in oklab,var(--c,var(--accent)) 60%,transparent);overflow:hidden;animation:entra .45s var(--spring)}
 .prox-h{display:flex;align-items:center;gap:10px;padding:16px 18px 0;font-size:12px;font-weight:650;color:var(--c,var(--accent));text-transform:uppercase;letter-spacing:.08em}
 .prox-b{padding:10px 18px 16px}
@@ -790,7 +791,7 @@ select.inp{appearance:none;padding-right:34px;background-image:url("data:image/s
 <div id="app"></div>
 <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js" integrity="sha384-5+cfbwT0iiub6VsQAdn6yz16nr6sDiQoHx6tm4O8OVYXHYOxcffFmCJBL0dgdvGp" crossorigin="anonymous"></script>
 
-<script>window.__MOTOR_SRC__="/* =====================================================================\n   MOTOR — dinero exacto, cotizaciones, tiempos y optimizador de rutas.\n   Sin dependencias. Corre en el navegador y en Node (pruebas).\n   ===================================================================== */\n(function (root) {\n  \"use strict\";\n\n  /* ---------------- Dinero exacto (BigInt, nunca float) ---------------- */\n  var ESC = 10n;                    // escala interna: 10 decimales\n  var F = 10n ** ESC;\n  var MONEDAS = {\n    USD: { dec: 2, simbolo: \"US$\", nombre: \"Dólares\" },\n    ARS: { dec: 2, simbolo: \"$\", nombre: \"Pesos\" },\n    EUR: { dec: 2, simbolo: \"€\", nombre: \"Euros\" }\n  };\n\n  // \"15000.50\" (canónico, como viene de la base) → BigInt escalado\n  function dec(str) {\n    str = String(str).trim();\n    if (!/^-?\\d+(\\.\\d+)?$/.test(str)) { throw new Error(\"Número inválido: \" + str); }\n    var neg = str[0] === \"-\"; if (neg) { str = str.slice(1); }\n    var p = str.split(\".\"), ent = p[0], fr = (p[1] || \"\");\n    if (fr.length > Number(ESC)) {         // más precisión que la escala: se trunca hacia arriba\n      var extra = fr.slice(Number(ESC)); fr = fr.slice(0, Number(ESC));\n      var v0 = BigInt(ent) * F + BigInt(fr);\n      if (/[1-9]/.test(extra)) { v0 += 1n; }\n      return neg ? -v0 : v0;\n    }\n    var v = BigInt(ent) * F + BigInt((fr + \"0\".repeat(Number(ESC))).slice(0, Number(ESC)));\n    return neg ? -v : v;\n  }\n  function mulCeil(a, b) { var p = a * b; var q = p / F; if (p % F !== 0n && p > 0n) { q += 1n; } return q; }\n  function divCeil(a, b) { var p = a * F; var q = p / b; if (p % b !== 0n && (p > 0n) === (b > 0n)) { q += 1n; } return q; }\n  function aNumero(a) { return Number(a) / Number(F); }   // SOLO para dibujar/ordenar, nunca para guardar\n  function aCanonico(a, decs) {\n    var neg = a < 0n; if (neg) { a = -a; }\n    var s = F / (10n ** BigInt(decs)); var q = a / s; if (a % s !== 0n) { q += 1n; }  // hacia arriba (conservador)\n    var d = 10n ** BigInt(decs); var ent = q / d, fr = q % d;\n    return (neg ? \"-\" : \"\") + ent.toString() + (decs ? \".\" + fr.toString().padStart(decs, \"0\") : \"\");\n  }\n\n  // Entrada del usuario en formato argentino: miles con punto, decimales con coma.\n  // Nunca redondea: si sobran decimales, error. Si es ambiguo, error explicativo.\n  function parsearImporte(txt, moneda) {\n    var m = MONEDAS[moneda]; if (!m) { return { error: \"Elegí la moneda\" }; }\n    var s = String(txt || \"\").replace(/\\s| /g, \"\").replace(/^(US\\$|\\$|€|USD|ARS|EUR)/i, \"\");\n    if (!s) { return { error: \"Falta el importe\" }; }\n    if (!/^[\\d.,]+$/.test(s)) { return { error: \"Solo números, puntos y coma\" }; }\n    var ent, fr = \"\";\n    if (s.indexOf(\",\") >= 0) {\n      if (s.split(\",\").length > 2) { return { error: \"Hay más de una coma\" }; }\n      var p = s.split(\",\"); ent = p[0]; fr = p[1];\n      if (!fr) { return { error: \"Faltan los decimales después de la coma\" }; }\n    } else { ent = s; }\n    if (ent.indexOf(\".\") >= 0) {\n      if (!/^\\d{1,3}(\\.\\d{3})+$/.test(ent)) { return { error: \"El punto separa miles. Para decimales usá coma\" }; }\n      ent = ent.replace(/\\./g, \"\");\n    }\n    if (!/^\\d+$/.test(ent)) { return { error: \"Importe inválido\" }; }\n    if (fr.length > m.dec) { return { error: moneda + \" admite \" + m.dec + \" decimales. Corregí el importe\" }; }\n    ent = ent.replace(/^0+(?=\\d)/, \"\");\n    var canon = ent + (fr ? \".\" + fr : \"\");\n    if (dec(canon) <= 0n) { return { error: \"El importe tiene que ser mayor que cero\" }; }\n    if (ent.length > 13) { return { error: \"Importe fuera de rango\" }; }\n    return { valor: canon };\n  }\n\n  // \"15000.5\" → \"15.000,50\"\n  function fmtNum(canon, decs) {\n    var v = typeof canon === \"bigint\" ? canon : dec(canon);\n    var s = aCanonico(v, decs == null ? 2 : decs);\n    var neg = s[0] === \"-\"; if (neg) { s = s.slice(1); }\n    var p = s.split(\".\"), ent = p[0].replace(/\\B(?=(\\d{3})+(?!\\d))/g, \".\");\n    return (neg ? \"−\" : \"\") + ent + (p[1] ? \",\" + p[1] : \"\");\n  }\n  function fmtDinero(canon, moneda, opts) {\n    var m = MONEDAS[moneda] || { dec: 2, simbolo: moneda };\n    var decs = m.dec;\n    if (opts && opts.compacto) {\n      var v = typeof canon === \"bigint\" ? canon : dec(canon);\n      if (v % F === 0n) { decs = 0; }\n    }\n    return m.simbolo + \" \" + fmtNum(canon, decs);\n  }\n  function fmtCompacto(big) {             // USD 18,4k (para gráficos)\n    var n = aNumero(big);\n    function d1(x) { var t = x.toFixed(x >= 100 ? 0 : 1); return t.replace(/\\.0$/, \"\").replace(\".\", \",\"); }\n    if (Math.abs(n) >= 1e6) { return d1(n / 1e6) + \"M\"; }\n    if (Math.abs(n) >= 1e3) { return d1(n / 1e3) + \"k\"; }\n    return String(Math.round(n));\n  }\n\n  /* ---------------- Cotizaciones ---------------- */\n  // tasas = { tipo, lado, usd:{compra,venta}, eur:{compra,venta} } en ARS, strings canónicos\n  function numStr(x) {\n    if (x == null || x === \"\") { return null; }\n    var s = typeof x === \"number\" ? x.toString() : String(x);\n    if (/e/i.test(s)) { s = Number(s).toFixed(6); }\n    return /^\\d+(\\.\\d+)?$/.test(s) ? s : null;\n  }\n  function aUSD(importe, moneda, tasas) {        // → BigInt escalado (USD), redondeo hacia arriba\n    var v = dec(importe);\n    if (moneda === \"USD\") { return v; }\n    if (!tasas) { return null; }\n    var lado = tasas.lado || \"compra\";\n    var usd = tasas.usd && tasas.usd[lado]; if (!usd) { return null; }\n    if (moneda === \"ARS\") { return divCeil(v, dec(usd)); }\n    if (moneda === \"EUR\") {\n      var eur = tasas.eur && tasas.eur[lado]; if (!eur) { return null; }\n      return divCeil(mulCeil(v, dec(eur)), dec(usd));\n    }\n    return null;\n  }\n\n  function normalizarCotizaciones(dolarapi, bluelytics, eurapi) {\n    var out = { tomadaEn: new Date().toISOString(), fuentes: [], tipos: {} };\n    var tipos = [\"blue\", \"oficial\", \"bolsa\"];\n    tipos.forEach(function (t) { out.tipos[t] = { usd: {}, eur: {}, detalle: [] }; });\n    if (Array.isArray(dolarapi)) {\n      out.fuentes.push(\"dolarapi.com\");\n      dolarapi.forEach(function (d) {\n        var t = d.casa; if (!out.tipos[t]) { return; }\n        var c = numStr(d.compra), v = numStr(d.venta);\n        if (c) { out.tipos[t].usd.compra = c; } if (v) { out.tipos[t].usd.venta = v; }\n        out.tipos[t].actualizado = d.fechaActualizacion || null;\n        out.tipos[t].detalle.push({ fuente: \"dolarapi.com\", compra: c, venta: v });\n      });\n    }\n    if (bluelytics && bluelytics.blue) {\n      out.fuentes.push(\"bluelytics.com.ar\");\n      var b = bluelytics;\n      var pares = [[\"blue\", b.blue, b.blue_euro], [\"oficial\", b.oficial, b.oficial_euro]];\n      pares.forEach(function (p) {\n        var T = out.tipos[p[0]];\n        if (p[1]) {\n          T.detalle.push({ fuente: \"bluelytics.com.ar\", compra: numStr(p[1].value_buy), venta: numStr(p[1].value_sell) });\n          if (!T.usd.compra) { T.usd.compra = numStr(p[1].value_buy); }\n          if (!T.usd.venta) { T.usd.venta = numStr(p[1].value_sell); }\n        }\n        if (p[2]) { T.eur.compra = numStr(p[2].value_buy); T.eur.venta = numStr(p[2].value_sell); }\n      });\n    }\n    if (eurapi && eurapi.compra && !out.tipos.oficial.eur.compra) {\n      out.tipos.oficial.eur = { compra: numStr(eurapi.compra), venta: numStr(eurapi.venta) };\n    }\n    // Euro para \"bolsa\": dólar bolsa × (euro oficial / dólar oficial). Se marca como derivado.\n    var o = out.tipos.oficial, bo = out.tipos.bolsa;\n    [\"compra\", \"venta\"].forEach(function (l) {\n      if (!bo.eur[l] && bo.usd[l] && o.eur[l] && o.usd[l]) {\n        var r = divCeil(mulCeil(dec(bo.usd[l]), dec(o.eur[l])), dec(o.usd[l]));\n        bo.eur[l] = aCanonico(r, 2); bo.eurDerivado = true;\n      }\n    });\n    // Diferencia entre fuentes (alerta si difieren más de 2%)\n    tipos.forEach(function (t) {\n      var d = out.tipos[t].detalle.filter(function (x) { return x.venta; });\n      if (d.length >= 2) {\n        var a = Number(d[0].venta), b2 = Number(d[1].venta);\n        out.tipos[t].diferencia = Math.abs(a - b2) / Math.min(a, b2);\n      }\n    });\n    return out;\n  }\n  function tasasDe(cot, tipo, lado) {\n    if (!cot || !cot.tipos[tipo]) { return null; }\n    var T = cot.tipos[tipo];\n    if (!T.usd[lado]) { return null; }\n    return { tipo: tipo, lado: lado, usd: T.usd, eur: T.eur, tomadaEn: cot.tomadaEn };\n  }\n\n  /* ---------------- Distancias y tiempos ---------------- */\n  function haversine(a, b) {\n    var R = 6371000, r = Math.PI / 180;\n    var dLat = (b.lat - a.lat) * r, dLng = (b.lng - a.lng) * r;\n    var x = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLng / 2) ** 2;\n    return 2 * R * Math.asin(Math.sqrt(x));\n  }\n  // Estimación sin servicio de rutas: recorrido urbano ≈ 1,35 × línea recta a 22 km/h\n  function matrizEstimada(puntos) {\n    var n = puntos.length, dur = [], dist = [];\n    for (var i = 0; i < n; i++) {\n      dur.push([]); dist.push([]);\n      for (var j = 0; j < n; j++) {\n        var d = i === j ? 0 : haversine(puntos[i], puntos[j]) * 1.35;\n        dist[i].push(d); dur[i].push(d / (22000 / 3600));\n      }\n    }\n    return { dur: dur, dist: dist, fuente: \"estimada\" };\n  }\n\n  /* ---------------- Modelo de una parada para el motor ----------------\n     parada = { id, lat, lng, horaMin|null, montos:[{sentido, moneda, importe}] }\n     Se precalcula el equivalente en USD de entregas y retiros (BigInt exacto)\n     y su versión Number solo para ordenar alternativas. */\n  function prepararParadas(paradas, tasas) {\n    return paradas.map(function (p) {\n      var ent = 0n, ret = 0n, falta = false, porMoneda = {};\n      (p.montos || []).forEach(function (m) {\n        var u = aUSD(m.importe, m.moneda, tasas);\n        if (u == null) { falta = true; u = 0n; }\n        if (m.sentido === \"entrega\") { ent += u; } else { ret += u; }\n        porMoneda[m.moneda] = porMoneda[m.moneda] || { entrega: 0n, retiro: 0n };\n        porMoneda[m.moneda][m.sentido] += dec(m.importe);\n      });\n      return {\n        id: p.id, lat: p.lat, lng: p.lng, horaMin: p.horaMin == null ? null : p.horaMin,\n        entUSD: ent, retUSD: ret, ent: aNumero(ent), ret: aNumero(ret), sinCotizacion: falta,\n        porMoneda: porMoneda, ref: p\n      };\n    });\n  }\n\n  /* ---------------- Evaluación de un recorrido ----------------\n     idx: índices en la matriz (0 = base). Devuelve tiempos y exposición. */\n  function evaluar(ruta, P, M, cfg) {\n    var t = cfg.salidaMin * 60, t0 = t, prev = 0, carga = 0, area = 0, pico = 0, tarde = 0, espera = 0, dist = 0;\n    var tol = cfg.toleranciaMin * 60, serv = cfg.servicioMin * 60, fx = cfg.factorTransito;\n    for (var k = 0; k < ruta.length; k++) { carga += P[ruta[k]].ent; }\n    pico = carga;\n    var etas = [];\n    for (var i = 0; i < ruta.length; i++) {\n      var s = P[ruta[i]], mi = ruta[i] + 1;\n      var viaje = M.dur[prev][mi] * fx;\n      dist += M.dist[prev][mi];\n      area += carga * viaje; t += viaje;\n      if (s.horaMin != null) {\n        var desde = s.horaMin * 60 - tol, hasta = s.horaMin * 60 + tol;\n        if (t < desde) { area += carga * (desde - t); espera += desde - t; t = desde; }\n        if (t > hasta) { tarde += t - hasta; }\n      }\n      etas.push(t);\n      t += serv; area += carga * serv;\n      carga = carga - s.ent + s.ret;\n      if (carga > pico) { pico = carga; }\n      prev = mi;\n    }\n    if (ruta.length) {\n      var back = M.dur[prev][0] * fx; dist += M.dist[prev][0];\n      area += carga * back; t += back;\n    }\n    return { inicio: t0, fin: t, dur: t - t0, area: area, pico: pico, tarde: tarde, espera: espera, dist: dist, etas: etas };\n  }\n\n  function costo(rutas, P, M, cfg, lambda) {\n    var total = 0, fin = 0, area = 0, tarde = 0, exceso = 0, evs = [];\n    for (var r = 0; r < rutas.length; r++) {\n      var e = evaluar(rutas[r], P, M, cfg); evs.push(e);\n      total += e.dur; area += e.area; tarde += e.tarde;\n      if (e.fin > fin) { fin = e.fin; }\n      if (e.pico > cfg.tope) { exceso += e.pico - cfg.tope; }\n    }\n    var c = total + 1.0 * (fin - cfg.salidaMin * 60) + 25 * tarde + lambda * area + exceso * 4;\n    return { c: c, evs: evs, total: total, fin: fin, area: area, tarde: tarde, exceso: exceso };\n  }\n\n  /* ---------------- Búsqueda ---------------- */\n  function rng(seed) { var s = seed >>> 0 || 1; return function () { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; return ((s >>> 0) % 1e9) / 1e9; }; }\n\n  function construir(P, M, cfg, k, lambda, rand) {\n    var orden = P.map(function (_, i) { return i; });\n    orden.sort(function (a, b) {\n      var ha = P[a].horaMin == null ? 1e9 : P[a].horaMin, hb = P[b].horaMin == null ? 1e9 : P[b].horaMin;\n      return ha - hb || (rand() - 0.5);\n    });\n    if (rand() < 0.5) {   // variante: primero las más lejanas sin horario\n      var sinH = orden.filter(function (i) { return P[i].horaMin == null; });\n      var conH = orden.filter(function (i) { return P[i].horaMin != null; });\n      sinH.sort(function (a, b) { return M.dur[0][b + 1] - M.dur[0][a + 1] + (rand() - 0.5) * 120; });\n      orden = conH.concat(sinH);\n    }\n    var rutas = []; for (var r = 0; r < k; r++) { rutas.push([]); }\n    orden.forEach(function (i) {\n      var mejor = null;\n      for (var r = 0; r < k; r++) {\n        for (var pos = 0; pos <= rutas[r].length; pos++) {\n          rutas[r].splice(pos, 0, i);\n          var c = costo(rutas, P, M, cfg, lambda).c;\n          rutas[r].splice(pos, 1);\n          if (!mejor || c < mejor.c) { mejor = { c: c, r: r, pos: pos }; }\n        }\n      }\n      rutas[mejor.r].splice(mejor.pos, 0, i);\n    });\n    return rutas;\n  }\n\n  function mejorar(rutas, P, M, cfg, lambda, limiteMs) {\n    var t0 = Date.now(), actual = costo(rutas, P, M, cfg, lambda).c, hubo = true;\n    while (hubo && Date.now() - t0 < limiteMs) {\n      hubo = false;\n      // mover una parada a otra posición / otro recorrido\n      for (var a = 0; a < rutas.length; a++) {\n        for (var i = 0; i < rutas[a].length; i++) {\n          var x = rutas[a][i]; rutas[a].splice(i, 1);\n          var mej = null;\n          for (var b = 0; b < rutas.length; b++) {\n            for (var j = 0; j <= rutas[b].length; j++) {\n              if (a === b && j === i) { continue; }\n              rutas[b].splice(j, 0, x);\n              var c = costo(rutas, P, M, cfg, lambda).c;\n              rutas[b].splice(j, 1);\n              if (c < actual - 1e-6 && (!mej || c < mej.c)) { mej = { c: c, b: b, j: j }; }\n            }\n          }\n          if (mej) { rutas[mej.b].splice(mej.j, 0, x); actual = mej.c; hubo = true; }\n          else { rutas[a].splice(i, 0, x); }\n        }\n      }\n      // intercambiar paradas entre recorridos\n      for (var a2 = 0; a2 < rutas.length; a2++) {\n        for (var b2 = a2 + 1; b2 < rutas.length; b2++) {\n          for (var i2 = 0; i2 < rutas[a2].length; i2++) {\n            for (var j2 = 0; j2 < rutas[b2].length; j2++) {\n              var u = rutas[a2][i2], v = rutas[b2][j2];\n              rutas[a2][i2] = v; rutas[b2][j2] = u;\n              var c2 = costo(rutas, P, M, cfg, lambda).c;\n              if (c2 < actual - 1e-6) { actual = c2; hubo = true; }\n              else { rutas[a2][i2] = u; rutas[b2][j2] = v; }\n            }\n          }\n        }\n      }\n      // 2-opt dentro de cada recorrido\n      for (var r = 0; r < rutas.length; r++) {\n        var R = rutas[r];\n        for (var p = 0; p < R.length - 1; p++) {\n          for (var q = p + 1; q < R.length; q++) {\n            var seg = R.slice(p, q + 1).reverse();\n            var old = R.slice(p, q + 1);\n            Array.prototype.splice.apply(R, [p, seg.length].concat(seg));\n            var c3 = costo(rutas, P, M, cfg, lambda).c;\n            if (c3 < actual - 1e-6) { actual = c3; hubo = true; }\n            else { Array.prototype.splice.apply(R, [p, old.length].concat(old)); }\n          }\n        }\n      }\n    }\n    return actual;\n  }\n\n  function optimizarCon(P, M, cfg, k, lambda, presupuestoMs, semilla) {\n    var rand = rng(semilla || 7), mejor = null, t0 = Date.now(), intentos = 0;\n    var n = P.length;\n    var porIntento = Math.max(40, Math.min(400, presupuestoMs / 3));\n    do {\n      var rutas = construir(P, M, cfg, k, lambda, rand);\n      var c = mejorar(rutas, P, M, cfg, lambda, porIntento);\n      if (!mejor || c < mejor.c) { mejor = { c: c, rutas: rutas.map(function (x) { return x.slice(); }) }; }\n      intentos++;\n    } while (Date.now() - t0 < presupuestoMs && n > 2 && intentos < 60);\n    return mejor.rutas;\n  }\n\n  /* ---------------- Resultado exacto de un plan ---------------- */\n  function detallarPlan(rutas, P, M, cfg, tasas, topeUSD) {\n    var topeBig = dec(topeUSD);\n    var viajes = rutas.map(function (ruta) {\n      var ev = evaluar(ruta, P, M, cfg);\n      // carga exacta por moneda y en USD equivalente\n      var carga = {}; var cargaUSD = 0n;\n      ruta.forEach(function (i) {\n        var pm = P[i].porMoneda;\n        Object.keys(pm).forEach(function (mo) { carga[mo] = (carga[mo] || 0n) + pm[mo].entrega; });\n        cargaUSD += P[i].entUSD;\n      });\n      var salidaCarga = Object.assign({}, carga);\n      var pico = cargaUSD, picoEn = -1, curva = [{ t: ev.inicio, usd: cargaUSD, parada: -1 }];\n      ruta.forEach(function (i, n) {\n        var pm = P[i].porMoneda;\n        curva.push({ t: ev.etas[n], usd: cargaUSD, parada: n, antes: true });\n        Object.keys(pm).forEach(function (mo) { carga[mo] = (carga[mo] || 0n) - pm[mo].entrega + pm[mo].retiro; });\n        cargaUSD = cargaUSD - P[i].entUSD + P[i].retUSD;\n        curva.push({ t: ev.etas[n] + cfg.servicioMin * 60, usd: cargaUSD, parada: n });\n        if (cargaUSD > pico) { pico = cargaUSD; picoEn = n; }\n      });\n      curva.push({ t: ev.fin, usd: cargaUSD, parada: ruta.length });\n      return {\n        paradas: ruta.map(function (i, n) { return { id: P[i].id, eta: ev.etas[n], ref: P[i].ref, tarde: P[i].horaMin != null && ev.etas[n] > (P[i].horaMin + cfg.toleranciaMin) * 60 }; }),\n        inicio: ev.inicio, fin: ev.fin, dur: ev.dur, dist: ev.dist, espera: ev.espera, tarde: ev.tarde,\n        area: ev.area, salidaCarga: salidaCarga, llegadaCarga: carga, picoUSD: pico, picoEn: picoEn,\n        excede: pico > topeBig, curva: curva, sinCotizacion: ruta.some(function (i) { return P[i].sinCotizacion; })\n      };\n    });\n    var fin = 0, total = 0, dist = 0, area = 0, excede = 0, tarde = 0, pico = 0n;\n    viajes.forEach(function (v) {\n      if (v.paradas.length) { fin = Math.max(fin, v.fin); }\n      total += v.dur; dist += v.dist; area += v.area; tarde += v.tarde;\n      if (v.excede) { excede++; } if (v.picoUSD > pico) { pico = v.picoUSD; }\n    });\n    return { viajes: viajes, fin: fin, total: total, dist: dist, area: area, excedidos: excede, tarde: tarde, picoUSD: pico, topeUSD: topeBig };\n  }\n\n  /* ---------------- API: alternativas ----------------\n     cfg: { salidaMin, toleranciaMin, servicioMin, factorTransito, tope(Number USD) }\n     k: cantidad de repartidores disponibles. */\n  function alternativas(paradas, M, cfg, k, tasas, topeUSD, presupuestoMs) {\n    var P = prepararParadas(paradas, tasas);\n    var pres = presupuestoMs || 900;\n    var tope = Math.max(1, cfg.tope);\n    var L_EXP = 60 / (tope * 150);      // 1 min ≈ llevar el tope completo 2,5 min\n    var L_REC = 60 / (tope * Math.sqrt(1800 * 150)); // punto medio entre \"rápida\" y \"exposición\": tiempo y plata pesan igual\n    var defs = [\n      { clave: \"recomendada\", titulo: \"Recomendada\", sub: \"Ahorrar tiempo y llevar menos plata encima, por igual\", lambda: L_REC, k: k },\n      { clave: \"exposicion\", titulo: \"Menor exposición\", sub: \"Acepta algo más de tiempo para llevar menos plata encima\", lambda: L_EXP, k: k },\n      { clave: \"rapida\", titulo: \"Más rápida\", sub: \"Solo minimiza el tiempo total\", lambda: 0, k: k }\n    ];\n    if (k > 1) { defs.push({ clave: \"menos\", titulo: \"Con \" + (k - 1) + \" repartidor\" + (k - 1 > 1 ? \"es\" : \"\"), sub: \"Libera un repartidor\", lambda: L_REC, k: k - 1 }); }\n    var vistos = {}, out = [];\n    defs.forEach(function (d, i) {\n      var rutas = optimizarCon(P, M, cfg, d.k, d.lambda, pres / defs.length, 11 + i * 7);\n      var firma = rutas.map(function (r) { return r.join(\",\"); }).sort().join(\"|\");\n      var det = detallarPlan(rutas, P, M, cfg, tasas, topeUSD);\n      det.clave = d.clave; det.titulo = d.titulo; det.sub = d.sub; det.k = d.k; det.rutas = rutas;\n      if (vistos[firma]) { vistos[firma].tambien.push(d.titulo); return; }\n      det.tambien = []; vistos[firma] = det; out.push(det);\n    });\n    return { P: P, alternativas: out };\n  }\n\n  // Recalcular tiempos de un plan editado a mano (sin reordenar)\n  function recalcular(rutas, P, M, cfg, tasas, topeUSD) {\n    return detallarPlan(rutas, P, M, cfg, tasas, topeUSD);\n  }\n  // Reordenar solo dentro de cada recorrido (respeta la asignación manual)\n  function reordenar(rutas, P, M, cfg, lambda) {\n    var copia = rutas.map(function (r) { return r.slice(); });\n    var res = copia.map(function (r) {\n      var una = [r.slice()];\n      mejorar(una, P, M, cfg, lambda == null ? 60 / (Math.max(1, cfg.tope) * 1800) : lambda, 250);\n      return una[0];\n    });\n    return res;\n  }\n\n  /* ---------------- Horas estimadas en vivo ----------------\n     Recalcula lo que falta de un recorrido según lo que pasó de verdad:\n     cuándo salió, cuándo se resolvió cada parada y dónde está el repartidor.\n     Los tramos entre paradas se toman del plan (calles reales); solo el tramo\n     desde la posición actual se estima por distancia. Todo en segundos del día.\n     o = { ahora, inicio, iniciado|null, enCurso, finalizado, base|null, pos:{lat,lng,t}|null,\n           tolMin, finPlan|null, paradas:[{ id, lat, lng, eta|null, horaMin|null, estado, resuelta|null }] } */\n  function proyectar(o) {\n    var P = o.paradas, tol = (o.tolMin || 0) * 60, etas = {};\n    var est = function (a, b) { return a && b ? haversine(a, b) * 1.35 / (22000 / 3600) : 0; };\n    var pend = []; P.forEach(function (p, i) { if (p.estado === \"asignada\" || p.estado === \"en_camino\") { pend.push(i); } });\n    if (o.finalizado || !pend.length) { return { etas: etas, fin: o.finalizado ? null : o.finPlan, atraso: 0, atrasoFin: 0, proxima: null }; }\n    var ultRes = -1; for (var k = 0; k < pend[0]; k++) { if (P[k].resuelta != null) { ultRes = k; } }\n    // desde dónde y desde cuándo se calcula\n    var desde, t, prev, prevPlan, gps = false;\n    if (!o.enCurso) { desde = o.base; t = Math.max(o.ahora, o.inicio); prev = null; prevPlan = o.inicio; }\n    else if (o.pos && o.ahora - o.pos.t < 180) { desde = o.pos; t = o.ahora; gps = true; prev = null; prevPlan = null; }\n    else if (ultRes >= 0) { desde = P[ultRes]; t = P[ultRes].resuelta; prev = ultRes; prevPlan = P[ultRes].eta; }\n    else { desde = o.base; t = o.iniciado != null ? o.iniciado : o.inicio; prev = null; prevPlan = o.inicio; }\n    for (var j = 0; j < pend.length; j++) {\n      var s = P[pend[j]], tramo = null;\n      var esperoEnPlan = s.horaMin != null && s.eta != null && Math.abs(s.eta - (s.horaMin * 60 - tol)) < 30;\n      if (!(j === 0 && gps) && prevPlan != null && s.eta != null && !esperoEnPlan) { tramo = Math.max(0, s.eta - prevPlan); }\n      if (tramo == null) { tramo = est(desde, s); }\n      t += tramo;\n      if (j === 0) { t = Math.max(t, o.ahora); }   // si todavía no llegó, no puede ser antes de ahora\n      if (s.horaMin != null && t < s.horaMin * 60 - tol) { t = s.horaMin * 60 - tol; }\n      etas[s.id] = t; desde = s; prevPlan = s.eta; prev = pend[j];\n    }\n    var ultima = P[pend[pend.length - 1]], vuelta;\n    vuelta = o.finPlan != null && ultima.eta != null && pend[pend.length - 1] === P.length - 1 ? Math.max(0, o.finPlan - ultima.eta) : est(ultima, o.base);\n    var fin = t + vuelta, primera = P[pend[0]];\n    return { etas: etas, fin: fin, proxima: primera.id,\n      atraso: primera.eta != null ? etas[primera.id] - primera.eta : 0,\n      atrasoFin: o.finPlan != null ? fin - o.finPlan : 0 };\n  }\n\n  var Motor = {\n    MONEDAS: MONEDAS, dec: dec, aCanonico: aCanonico, aNumero: aNumero, parsearImporte: parsearImporte,\n    fmtNum: fmtNum, fmtDinero: fmtDinero, fmtCompacto: fmtCompacto, aUSD: aUSD,\n    normalizarCotizaciones: normalizarCotizaciones, tasasDe: tasasDe,\n    haversine: haversine, matrizEstimada: matrizEstimada, prepararParadas: prepararParadas,\n    evaluar: evaluar, proyectar: proyectar, alternativas: alternativas, recalcular: recalcular, reordenar: reordenar, detallarPlan: detallarPlan\n  };\n  if (typeof module !== \"undefined\" && module.exports) { module.exports = Motor; } else { root.Motor = Motor; }\n})(typeof window !== \"undefined\" ? window : globalThis);\n";
+<script>window.__MOTOR_SRC__="/* =====================================================================\n   MOTOR — dinero exacto, cotizaciones, tiempos y optimizador de rutas.\n   Sin dependencias. Corre en el navegador y en Node (pruebas).\n   ===================================================================== */\n(function (root) {\n  \"use strict\";\n\n  /* ---------------- Dinero exacto (BigInt, nunca float) ---------------- */\n  var ESC = 10n;                    // escala interna: 10 decimales\n  var F = 10n ** ESC;\n  var MONEDAS = {\n    USD: { dec: 2, simbolo: \"US$\", nombre: \"Dólares\" },\n    ARS: { dec: 2, simbolo: \"$\", nombre: \"Pesos\" },\n    EUR: { dec: 2, simbolo: \"€\", nombre: \"Euros\" }\n  };\n\n  // \"15000.50\" (canónico, como viene de la base) → BigInt escalado\n  function dec(str) {\n    str = String(str).trim();\n    if (!/^-?\\d+(\\.\\d+)?$/.test(str)) { throw new Error(\"Número inválido: \" + str); }\n    var neg = str[0] === \"-\"; if (neg) { str = str.slice(1); }\n    var p = str.split(\".\"), ent = p[0], fr = (p[1] || \"\");\n    if (fr.length > Number(ESC)) {         // más precisión que la escala: se trunca hacia arriba\n      var extra = fr.slice(Number(ESC)); fr = fr.slice(0, Number(ESC));\n      var v0 = BigInt(ent) * F + BigInt(fr);\n      if (/[1-9]/.test(extra)) { v0 += 1n; }\n      return neg ? -v0 : v0;\n    }\n    var v = BigInt(ent) * F + BigInt((fr + \"0\".repeat(Number(ESC))).slice(0, Number(ESC)));\n    return neg ? -v : v;\n  }\n  function mulCeil(a, b) { var p = a * b; var q = p / F; if (p % F !== 0n && p > 0n) { q += 1n; } return q; }\n  function divCeil(a, b) { var p = a * F; var q = p / b; if (p % b !== 0n && (p > 0n) === (b > 0n)) { q += 1n; } return q; }\n  function aNumero(a) { return Number(a) / Number(F); }   // SOLO para dibujar/ordenar, nunca para guardar\n  function aCanonico(a, decs) {\n    var neg = a < 0n; if (neg) { a = -a; }\n    var s = F / (10n ** BigInt(decs)); var q = a / s; if (a % s !== 0n) { q += 1n; }  // hacia arriba (conservador)\n    var d = 10n ** BigInt(decs); var ent = q / d, fr = q % d;\n    return (neg ? \"-\" : \"\") + ent.toString() + (decs ? \".\" + fr.toString().padStart(decs, \"0\") : \"\");\n  }\n\n  // Entrada del usuario en formato argentino: miles con punto, decimales con coma.\n  // Nunca redondea: si sobran decimales, error. Si es ambiguo, error explicativo.\n  function parsearImporte(txt, moneda, opts) {\n    var m = MONEDAS[moneda]; if (!m) { return { error: \"Elegí la moneda\" }; }\n    var s = String(txt || \"\").replace(/\\s| /g, \"\").replace(/^(US\\$|\\$|€|USD|ARS|EUR)/i, \"\");\n    if (!s) { return (opts && opts.cero) ? { valor: \"0\" } : { error: \"Falta el importe\" }; }\n    if (!/^[\\d.,]+$/.test(s)) { return { error: \"Solo números, puntos y coma\" }; }\n    var ent, fr = \"\";\n    if (s.indexOf(\",\") >= 0) {\n      if (s.split(\",\").length > 2) { return { error: \"Hay más de una coma\" }; }\n      var p = s.split(\",\"); ent = p[0]; fr = p[1];\n      if (!fr) { return { error: \"Faltan los decimales después de la coma\" }; }\n    } else { ent = s; }\n    if (ent.indexOf(\".\") >= 0) {\n      if (!/^\\d{1,3}(\\.\\d{3})+$/.test(ent)) { return { error: \"El punto separa miles. Para decimales usá coma\" }; }\n      ent = ent.replace(/\\./g, \"\");\n    }\n    if (!/^\\d+$/.test(ent)) { return { error: \"Importe inválido\" }; }\n    if (fr.length > m.dec) { return { error: moneda + \" admite \" + m.dec + \" decimales. Corregí el importe\" }; }\n    ent = ent.replace(/^0+(?=\\d)/, \"\");\n    var canon = ent + (fr ? \".\" + fr : \"\");\n    if (!(opts && opts.cero) && dec(canon) <= 0n) { return { error: \"El importe tiene que ser mayor que cero\" }; }\n    if (ent.length > 13) { return { error: \"Importe fuera de rango\" }; }\n    return { valor: canon };\n  }\n\n  // \"15000.5\" → \"15.000,50\"\n  function fmtNum(canon, decs) {\n    var v = typeof canon === \"bigint\" ? canon : dec(canon);\n    var s = aCanonico(v, decs == null ? 2 : decs);\n    var neg = s[0] === \"-\"; if (neg) { s = s.slice(1); }\n    var p = s.split(\".\"), ent = p[0].replace(/\\B(?=(\\d{3})+(?!\\d))/g, \".\");\n    return (neg ? \"−\" : \"\") + ent + (p[1] ? \",\" + p[1] : \"\");\n  }\n  function fmtDinero(canon, moneda, opts) {\n    var m = MONEDAS[moneda] || { dec: 2, simbolo: moneda };\n    var decs = m.dec;\n    if (opts && opts.compacto) {\n      var v = typeof canon === \"bigint\" ? canon : dec(canon);\n      if (v % F === 0n) { decs = 0; }\n    }\n    return m.simbolo + \" \" + fmtNum(canon, decs);\n  }\n  function fmtCompacto(big) {             // USD 18,4k (para gráficos)\n    var n = aNumero(big);\n    function d1(x) { var t = x.toFixed(x >= 100 ? 0 : 1); return t.replace(/\\.0$/, \"\").replace(\".\", \",\"); }\n    if (Math.abs(n) >= 1e6) { return d1(n / 1e6) + \"M\"; }\n    if (Math.abs(n) >= 1e3) { return d1(n / 1e3) + \"k\"; }\n    return String(Math.round(n));\n  }\n\n  /* ---------------- Cotizaciones ---------------- */\n  // tasas = { tipo, lado, usd:{compra,venta}, eur:{compra,venta} } en ARS, strings canónicos\n  function numStr(x) {\n    if (x == null || x === \"\") { return null; }\n    var s = typeof x === \"number\" ? x.toString() : String(x);\n    if (/e/i.test(s)) { s = Number(s).toFixed(6); }\n    return /^\\d+(\\.\\d+)?$/.test(s) ? s : null;\n  }\n  function aUSD(importe, moneda, tasas) {        // → BigInt escalado (USD), redondeo hacia arriba\n    var v = dec(importe);\n    if (moneda === \"USD\") { return v; }\n    if (!tasas) { return null; }\n    var lado = tasas.lado || \"compra\";\n    var usd = tasas.usd && tasas.usd[lado]; if (!usd) { return null; }\n    if (moneda === \"ARS\") { return divCeil(v, dec(usd)); }\n    if (moneda === \"EUR\") {\n      var eur = tasas.eur && tasas.eur[lado]; if (!eur) { return null; }\n      return divCeil(mulCeil(v, dec(eur)), dec(usd));\n    }\n    return null;\n  }\n  // Convierte un importe de una moneda a otra (vía ARS), para calcular la otra punta\n  // de un cambio de moneda con la cotización del día. \"lado\": \"compra\" o \"venta\"\n  // (el lado con el que la casa opera esa moneda extranjera en esta transacción).\n  // Redondeo siempre hacia arriba (conservador, igual criterio que aUSD).\n  function convertir(importe, monedaOrigen, monedaDestino, tasas, lado) {\n    var v = dec(importe);\n    if (monedaOrigen === monedaDestino) { return aCanonico(v, MONEDAS[monedaDestino].dec); }\n    if (!tasas) { return null; }\n    function tasa(moneda) { var t = moneda === \"USD\" ? tasas.usd : moneda === \"EUR\" ? tasas.eur : null; return t && t[lado] ? dec(t[lado]) : null; }\n    function aArs(x, moneda) { if (moneda === \"ARS\") { return x; } var t = tasa(moneda); return t == null ? null : mulCeil(x, t); }\n    function deArs(x, moneda) { if (moneda === \"ARS\") { return x; } var t = tasa(moneda); return t == null ? null : divCeil(x, t); }\n    var enArs = aArs(v, monedaOrigen); if (enArs == null) { return null; }\n    var out = deArs(enArs, monedaDestino); if (out == null) { return null; }\n    return aCanonico(out, MONEDAS[monedaDestino].dec);\n  }\n\n  function normalizarCotizaciones(dolarapi, bluelytics, eurapi) {\n    var out = { tomadaEn: new Date().toISOString(), fuentes: [], tipos: {} };\n    var tipos = [\"blue\", \"oficial\", \"bolsa\"];\n    tipos.forEach(function (t) { out.tipos[t] = { usd: {}, eur: {}, detalle: [] }; });\n    if (Array.isArray(dolarapi)) {\n      out.fuentes.push(\"dolarapi.com\");\n      dolarapi.forEach(function (d) {\n        var t = d.casa; if (!out.tipos[t]) { return; }\n        var c = numStr(d.compra), v = numStr(d.venta);\n        if (c) { out.tipos[t].usd.compra = c; } if (v) { out.tipos[t].usd.venta = v; }\n        out.tipos[t].actualizado = d.fechaActualizacion || null;\n        out.tipos[t].detalle.push({ fuente: \"dolarapi.com\", compra: c, venta: v });\n      });\n    }\n    if (bluelytics && bluelytics.blue) {\n      out.fuentes.push(\"bluelytics.com.ar\");\n      var b = bluelytics;\n      var pares = [[\"blue\", b.blue, b.blue_euro], [\"oficial\", b.oficial, b.oficial_euro]];\n      pares.forEach(function (p) {\n        var T = out.tipos[p[0]];\n        if (p[1]) {\n          T.detalle.push({ fuente: \"bluelytics.com.ar\", compra: numStr(p[1].value_buy), venta: numStr(p[1].value_sell) });\n          if (!T.usd.compra) { T.usd.compra = numStr(p[1].value_buy); }\n          if (!T.usd.venta) { T.usd.venta = numStr(p[1].value_sell); }\n        }\n        if (p[2]) { T.eur.compra = numStr(p[2].value_buy); T.eur.venta = numStr(p[2].value_sell); }\n      });\n    }\n    if (eurapi && eurapi.compra && !out.tipos.oficial.eur.compra) {\n      out.tipos.oficial.eur = { compra: numStr(eurapi.compra), venta: numStr(eurapi.venta) };\n    }\n    // Euro para \"bolsa\": dólar bolsa × (euro oficial / dólar oficial). Se marca como derivado.\n    var o = out.tipos.oficial, bo = out.tipos.bolsa;\n    [\"compra\", \"venta\"].forEach(function (l) {\n      if (!bo.eur[l] && bo.usd[l] && o.eur[l] && o.usd[l]) {\n        var r = divCeil(mulCeil(dec(bo.usd[l]), dec(o.eur[l])), dec(o.usd[l]));\n        bo.eur[l] = aCanonico(r, 2); bo.eurDerivado = true;\n      }\n    });\n    // Diferencia entre fuentes (alerta si difieren más de 2%)\n    tipos.forEach(function (t) {\n      var d = out.tipos[t].detalle.filter(function (x) { return x.venta; });\n      if (d.length >= 2) {\n        var a = Number(d[0].venta), b2 = Number(d[1].venta);\n        out.tipos[t].diferencia = Math.abs(a - b2) / Math.min(a, b2);\n      }\n    });\n    return out;\n  }\n  function tasasDe(cot, tipo, lado) {\n    if (!cot || !cot.tipos[tipo]) { return null; }\n    var T = cot.tipos[tipo];\n    if (!T.usd[lado]) { return null; }\n    return { tipo: tipo, lado: lado, usd: T.usd, eur: T.eur, tomadaEn: cot.tomadaEn };\n  }\n\n  /* ---------------- Distancias y tiempos ---------------- */\n  function haversine(a, b) {\n    var R = 6371000, r = Math.PI / 180;\n    var dLat = (b.lat - a.lat) * r, dLng = (b.lng - a.lng) * r;\n    var x = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLng / 2) ** 2;\n    return 2 * R * Math.asin(Math.sqrt(x));\n  }\n  // Estimación sin servicio de rutas: recorrido urbano ≈ 1,35 × línea recta a 22 km/h\n  function matrizEstimada(puntos) {\n    var n = puntos.length, dur = [], dist = [];\n    for (var i = 0; i < n; i++) {\n      dur.push([]); dist.push([]);\n      for (var j = 0; j < n; j++) {\n        var d = i === j ? 0 : haversine(puntos[i], puntos[j]) * 1.35;\n        dist[i].push(d); dur[i].push(d / (22000 / 3600));\n      }\n    }\n    return { dur: dur, dist: dist, fuente: \"estimada\" };\n  }\n\n  /* ---------------- Modelo de una parada para el motor ----------------\n     parada = { id, lat, lng, horaMin|null, montos:[{sentido, moneda, importe}] }\n     Se precalcula el equivalente en USD de entregas y retiros (BigInt exacto)\n     y su versión Number solo para ordenar alternativas. */\n  function prepararParadas(paradas, tasas) {\n    return paradas.map(function (p) {\n      var ent = 0n, ret = 0n, falta = false, porMoneda = {};\n      (p.montos || []).forEach(function (m) {\n        var u = aUSD(m.importe, m.moneda, tasas);\n        if (u == null) { falta = true; u = 0n; }\n        if (m.sentido === \"entrega\") { ent += u; } else { ret += u; }\n        porMoneda[m.moneda] = porMoneda[m.moneda] || { entrega: 0n, retiro: 0n };\n        porMoneda[m.moneda][m.sentido] += dec(m.importe);\n      });\n      return {\n        id: p.id, lat: p.lat, lng: p.lng, horaMin: p.horaMin == null ? null : p.horaMin,\n        entUSD: ent, retUSD: ret, ent: aNumero(ent), ret: aNumero(ret), sinCotizacion: falta,\n        porMoneda: porMoneda, ref: p\n      };\n    });\n  }\n\n  /* ---------------- Evaluación de un recorrido ----------------\n     idx: índices en la matriz (0 = base). Devuelve tiempos y exposición. */\n  function evaluar(ruta, P, M, cfg) {\n    var t = cfg.salidaMin * 60, t0 = t, prev = 0, carga = 0, area = 0, pico = 0, tarde = 0, espera = 0, dist = 0;\n    var tol = cfg.toleranciaMin * 60, serv = cfg.servicioMin * 60, fx = cfg.factorTransito;\n    for (var k = 0; k < ruta.length; k++) { carga += P[ruta[k]].ent; }\n    pico = carga;\n    var etas = [];\n    for (var i = 0; i < ruta.length; i++) {\n      var s = P[ruta[i]], mi = ruta[i] + 1;\n      var viaje = M.dur[prev][mi] * fx;\n      dist += M.dist[prev][mi];\n      area += carga * viaje; t += viaje;\n      if (s.horaMin != null) {\n        var desde = s.horaMin * 60 - tol, hasta = s.horaMin * 60 + tol;\n        if (t < desde) { area += carga * (desde - t); espera += desde - t; t = desde; }\n        if (t > hasta) { tarde += t - hasta; }\n      }\n      etas.push(t);\n      t += serv; area += carga * serv;\n      carga = carga - s.ent + s.ret;\n      if (carga > pico) { pico = carga; }\n      prev = mi;\n    }\n    if (ruta.length) {\n      var back = M.dur[prev][0] * fx; dist += M.dist[prev][0];\n      area += carga * back; t += back;\n    }\n    return { inicio: t0, fin: t, dur: t - t0, area: area, pico: pico, tarde: tarde, espera: espera, dist: dist, etas: etas };\n  }\n\n  function costo(rutas, P, M, cfg, lambda) {\n    var total = 0, fin = 0, area = 0, tarde = 0, exceso = 0, evs = [];\n    for (var r = 0; r < rutas.length; r++) {\n      var e = evaluar(rutas[r], P, M, cfg); evs.push(e);\n      total += e.dur; area += e.area; tarde += e.tarde;\n      if (e.fin > fin) { fin = e.fin; }\n      if (e.pico > cfg.tope) { exceso += e.pico - cfg.tope; }\n    }\n    var c = total + 1.0 * (fin - cfg.salidaMin * 60) + 25 * tarde + lambda * area + exceso * 4;\n    return { c: c, evs: evs, total: total, fin: fin, area: area, tarde: tarde, exceso: exceso };\n  }\n\n  /* ---------------- Búsqueda ---------------- */\n  function rng(seed) { var s = seed >>> 0 || 1; return function () { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; return ((s >>> 0) % 1e9) / 1e9; }; }\n\n  function construir(P, M, cfg, k, lambda, rand) {\n    var orden = P.map(function (_, i) { return i; });\n    orden.sort(function (a, b) {\n      var ha = P[a].horaMin == null ? 1e9 : P[a].horaMin, hb = P[b].horaMin == null ? 1e9 : P[b].horaMin;\n      return ha - hb || (rand() - 0.5);\n    });\n    if (rand() < 0.5) {   // variante: primero las más lejanas sin horario\n      var sinH = orden.filter(function (i) { return P[i].horaMin == null; });\n      var conH = orden.filter(function (i) { return P[i].horaMin != null; });\n      sinH.sort(function (a, b) { return M.dur[0][b + 1] - M.dur[0][a + 1] + (rand() - 0.5) * 120; });\n      orden = conH.concat(sinH);\n    }\n    var rutas = []; for (var r = 0; r < k; r++) { rutas.push([]); }\n    orden.forEach(function (i) {\n      var mejor = null;\n      for (var r = 0; r < k; r++) {\n        for (var pos = 0; pos <= rutas[r].length; pos++) {\n          rutas[r].splice(pos, 0, i);\n          var c = costo(rutas, P, M, cfg, lambda).c;\n          rutas[r].splice(pos, 1);\n          if (!mejor || c < mejor.c) { mejor = { c: c, r: r, pos: pos }; }\n        }\n      }\n      rutas[mejor.r].splice(mejor.pos, 0, i);\n    });\n    return rutas;\n  }\n\n  function mejorar(rutas, P, M, cfg, lambda, limiteMs) {\n    var t0 = Date.now(), actual = costo(rutas, P, M, cfg, lambda).c, hubo = true;\n    while (hubo && Date.now() - t0 < limiteMs) {\n      hubo = false;\n      // mover una parada a otra posición / otro recorrido\n      for (var a = 0; a < rutas.length; a++) {\n        for (var i = 0; i < rutas[a].length; i++) {\n          var x = rutas[a][i]; rutas[a].splice(i, 1);\n          var mej = null;\n          for (var b = 0; b < rutas.length; b++) {\n            for (var j = 0; j <= rutas[b].length; j++) {\n              if (a === b && j === i) { continue; }\n              rutas[b].splice(j, 0, x);\n              var c = costo(rutas, P, M, cfg, lambda).c;\n              rutas[b].splice(j, 1);\n              if (c < actual - 1e-6 && (!mej || c < mej.c)) { mej = { c: c, b: b, j: j }; }\n            }\n          }\n          if (mej) { rutas[mej.b].splice(mej.j, 0, x); actual = mej.c; hubo = true; }\n          else { rutas[a].splice(i, 0, x); }\n        }\n      }\n      // intercambiar paradas entre recorridos\n      for (var a2 = 0; a2 < rutas.length; a2++) {\n        for (var b2 = a2 + 1; b2 < rutas.length; b2++) {\n          for (var i2 = 0; i2 < rutas[a2].length; i2++) {\n            for (var j2 = 0; j2 < rutas[b2].length; j2++) {\n              var u = rutas[a2][i2], v = rutas[b2][j2];\n              rutas[a2][i2] = v; rutas[b2][j2] = u;\n              var c2 = costo(rutas, P, M, cfg, lambda).c;\n              if (c2 < actual - 1e-6) { actual = c2; hubo = true; }\n              else { rutas[a2][i2] = u; rutas[b2][j2] = v; }\n            }\n          }\n        }\n      }\n      // 2-opt dentro de cada recorrido\n      for (var r = 0; r < rutas.length; r++) {\n        var R = rutas[r];\n        for (var p = 0; p < R.length - 1; p++) {\n          for (var q = p + 1; q < R.length; q++) {\n            var seg = R.slice(p, q + 1).reverse();\n            var old = R.slice(p, q + 1);\n            Array.prototype.splice.apply(R, [p, seg.length].concat(seg));\n            var c3 = costo(rutas, P, M, cfg, lambda).c;\n            if (c3 < actual - 1e-6) { actual = c3; hubo = true; }\n            else { Array.prototype.splice.apply(R, [p, old.length].concat(old)); }\n          }\n        }\n      }\n    }\n    return actual;\n  }\n\n  function optimizarCon(P, M, cfg, k, lambda, presupuestoMs, semilla) {\n    var rand = rng(semilla || 7), mejor = null, t0 = Date.now(), intentos = 0;\n    var n = P.length;\n    var porIntento = Math.max(40, Math.min(400, presupuestoMs / 3));\n    do {\n      var rutas = construir(P, M, cfg, k, lambda, rand);\n      var c = mejorar(rutas, P, M, cfg, lambda, porIntento);\n      if (!mejor || c < mejor.c) { mejor = { c: c, rutas: rutas.map(function (x) { return x.slice(); }) }; }\n      intentos++;\n    } while (Date.now() - t0 < presupuestoMs && n > 2 && intentos < 60);\n    return mejor.rutas;\n  }\n\n  /* ---------------- Resultado exacto de un plan ---------------- */\n  function detallarPlan(rutas, P, M, cfg, tasas, topeUSD) {\n    var topeBig = dec(topeUSD);\n    var viajes = rutas.map(function (ruta) {\n      var ev = evaluar(ruta, P, M, cfg);\n      // carga exacta por moneda y en USD equivalente\n      var carga = {}; var cargaUSD = 0n;\n      ruta.forEach(function (i) {\n        var pm = P[i].porMoneda;\n        Object.keys(pm).forEach(function (mo) { carga[mo] = (carga[mo] || 0n) + pm[mo].entrega; });\n        cargaUSD += P[i].entUSD;\n      });\n      var salidaCarga = Object.assign({}, carga);\n      var pico = cargaUSD, picoEn = -1, curva = [{ t: ev.inicio, usd: cargaUSD, parada: -1 }];\n      ruta.forEach(function (i, n) {\n        var pm = P[i].porMoneda;\n        curva.push({ t: ev.etas[n], usd: cargaUSD, parada: n, antes: true });\n        Object.keys(pm).forEach(function (mo) { carga[mo] = (carga[mo] || 0n) - pm[mo].entrega + pm[mo].retiro; });\n        cargaUSD = cargaUSD - P[i].entUSD + P[i].retUSD;\n        curva.push({ t: ev.etas[n] + cfg.servicioMin * 60, usd: cargaUSD, parada: n });\n        if (cargaUSD > pico) { pico = cargaUSD; picoEn = n; }\n      });\n      curva.push({ t: ev.fin, usd: cargaUSD, parada: ruta.length });\n      return {\n        paradas: ruta.map(function (i, n) { return { id: P[i].id, eta: ev.etas[n], ref: P[i].ref, tarde: P[i].horaMin != null && ev.etas[n] > (P[i].horaMin + cfg.toleranciaMin) * 60 }; }),\n        inicio: ev.inicio, fin: ev.fin, dur: ev.dur, dist: ev.dist, espera: ev.espera, tarde: ev.tarde,\n        area: ev.area, salidaCarga: salidaCarga, llegadaCarga: carga, picoUSD: pico, picoEn: picoEn,\n        excede: pico > topeBig, curva: curva, sinCotizacion: ruta.some(function (i) { return P[i].sinCotizacion; })\n      };\n    });\n    var fin = 0, total = 0, dist = 0, area = 0, excede = 0, tarde = 0, pico = 0n;\n    viajes.forEach(function (v) {\n      if (v.paradas.length) { fin = Math.max(fin, v.fin); }\n      total += v.dur; dist += v.dist; area += v.area; tarde += v.tarde;\n      if (v.excede) { excede++; } if (v.picoUSD > pico) { pico = v.picoUSD; }\n    });\n    return { viajes: viajes, fin: fin, total: total, dist: dist, area: area, excedidos: excede, tarde: tarde, picoUSD: pico, topeUSD: topeBig };\n  }\n\n  /* ---------------- API: alternativas ----------------\n     cfg: { salidaMin, toleranciaMin, servicioMin, factorTransito, tope(Number USD) }\n     k: cantidad de repartidores disponibles. */\n  function alternativas(paradas, M, cfg, k, tasas, topeUSD, presupuestoMs) {\n    var P = prepararParadas(paradas, tasas);\n    var pres = presupuestoMs || 900;\n    var tope = Math.max(1, cfg.tope);\n    var L_EXP = 60 / (tope * 150);      // 1 min ≈ llevar el tope completo 2,5 min\n    var L_REC = 60 / (tope * Math.sqrt(1800 * 150)); // punto medio entre \"rápida\" y \"exposición\": tiempo y plata pesan igual\n    var defs = [\n      { clave: \"recomendada\", titulo: \"Recomendada\", sub: \"Ahorrar tiempo y llevar menos plata encima, por igual\", lambda: L_REC, k: k },\n      { clave: \"exposicion\", titulo: \"Menor exposición\", sub: \"Acepta algo más de tiempo para llevar menos plata encima\", lambda: L_EXP, k: k },\n      { clave: \"rapida\", titulo: \"Más rápida\", sub: \"Solo minimiza el tiempo total\", lambda: 0, k: k }\n    ];\n    if (k > 1) { defs.push({ clave: \"menos\", titulo: \"Con \" + (k - 1) + \" repartidor\" + (k - 1 > 1 ? \"es\" : \"\"), sub: \"Libera un repartidor\", lambda: L_REC, k: k - 1 }); }\n    var vistos = {}, out = [];\n    defs.forEach(function (d, i) {\n      var rutas = optimizarCon(P, M, cfg, d.k, d.lambda, pres / defs.length, 11 + i * 7);\n      var firma = rutas.map(function (r) { return r.join(\",\"); }).sort().join(\"|\");\n      var det = detallarPlan(rutas, P, M, cfg, tasas, topeUSD);\n      det.clave = d.clave; det.titulo = d.titulo; det.sub = d.sub; det.k = d.k; det.rutas = rutas;\n      if (vistos[firma]) { vistos[firma].tambien.push(d.titulo); return; }\n      det.tambien = []; vistos[firma] = det; out.push(det);\n    });\n    return { P: P, alternativas: out };\n  }\n\n  // Recalcular tiempos de un plan editado a mano (sin reordenar)\n  function recalcular(rutas, P, M, cfg, tasas, topeUSD) {\n    return detallarPlan(rutas, P, M, cfg, tasas, topeUSD);\n  }\n  // Reordenar solo dentro de cada recorrido (respeta la asignación manual)\n  function reordenar(rutas, P, M, cfg, lambda) {\n    var copia = rutas.map(function (r) { return r.slice(); });\n    var res = copia.map(function (r) {\n      var una = [r.slice()];\n      mejorar(una, P, M, cfg, lambda == null ? 60 / (Math.max(1, cfg.tope) * 1800) : lambda, 250);\n      return una[0];\n    });\n    return res;\n  }\n\n  /* ---------------- Horas estimadas en vivo ----------------\n     Recalcula lo que falta de un recorrido según lo que pasó de verdad:\n     cuándo salió, cuándo se resolvió cada parada y dónde está el repartidor.\n     Los tramos entre paradas se toman del plan (calles reales); solo el tramo\n     desde la posición actual se estima por distancia. Todo en segundos del día.\n     o = { ahora, inicio, iniciado|null, enCurso, finalizado, base|null, pos:{lat,lng,t}|null,\n           tolMin, finPlan|null, paradas:[{ id, lat, lng, eta|null, horaMin|null, estado, resuelta|null }] } */\n  function proyectar(o) {\n    var P = o.paradas, tol = (o.tolMin || 0) * 60, etas = {};\n    var est = function (a, b) { return a && b ? haversine(a, b) * 1.35 / (22000 / 3600) : 0; };\n    var pend = []; P.forEach(function (p, i) { if (p.estado === \"asignada\" || p.estado === \"en_camino\") { pend.push(i); } });\n    if (o.finalizado || !pend.length) { return { etas: etas, fin: o.finalizado ? null : o.finPlan, atraso: 0, atrasoFin: 0, proxima: null }; }\n    var ultRes = -1; for (var k = 0; k < pend[0]; k++) { if (P[k].resuelta != null) { ultRes = k; } }\n    // desde dónde y desde cuándo se calcula\n    var desde, t, prev, prevPlan, gps = false;\n    if (!o.enCurso) { desde = o.base; t = Math.max(o.ahora, o.inicio); prev = null; prevPlan = o.inicio; }\n    else if (o.pos && o.ahora - o.pos.t < 180) { desde = o.pos; t = o.ahora; gps = true; prev = null; prevPlan = null; }\n    else if (ultRes >= 0) { desde = P[ultRes]; t = P[ultRes].resuelta; prev = ultRes; prevPlan = P[ultRes].eta; }\n    else { desde = o.base; t = o.iniciado != null ? o.iniciado : o.inicio; prev = null; prevPlan = o.inicio; }\n    for (var j = 0; j < pend.length; j++) {\n      var s = P[pend[j]], tramo = null;\n      var esperoEnPlan = s.horaMin != null && s.eta != null && Math.abs(s.eta - (s.horaMin * 60 - tol)) < 30;\n      if (!(j === 0 && gps) && prevPlan != null && s.eta != null && !esperoEnPlan) { tramo = Math.max(0, s.eta - prevPlan); }\n      if (tramo == null) { tramo = est(desde, s); }\n      t += tramo;\n      if (j === 0) { t = Math.max(t, o.ahora); }   // si todavía no llegó, no puede ser antes de ahora\n      if (s.horaMin != null && t < s.horaMin * 60 - tol) { t = s.horaMin * 60 - tol; }\n      etas[s.id] = t; desde = s; prevPlan = s.eta; prev = pend[j];\n    }\n    var ultima = P[pend[pend.length - 1]], vuelta;\n    vuelta = o.finPlan != null && ultima.eta != null && pend[pend.length - 1] === P.length - 1 ? Math.max(0, o.finPlan - ultima.eta) : est(ultima, o.base);\n    var fin = t + vuelta, primera = P[pend[0]];\n    return { etas: etas, fin: fin, proxima: primera.id,\n      atraso: primera.eta != null ? etas[primera.id] - primera.eta : 0,\n      atrasoFin: o.finPlan != null ? fin - o.finPlan : 0 };\n  }\n\n  var Motor = {\n    MONEDAS: MONEDAS, dec: dec, aCanonico: aCanonico, aNumero: aNumero, parsearImporte: parsearImporte,\n    fmtNum: fmtNum, fmtDinero: fmtDinero, fmtCompacto: fmtCompacto, aUSD: aUSD, convertir: convertir,\n    normalizarCotizaciones: normalizarCotizaciones, tasasDe: tasasDe,\n    haversine: haversine, matrizEstimada: matrizEstimada, prepararParadas: prepararParadas,\n    evaluar: evaluar, proyectar: proyectar, alternativas: alternativas, recalcular: recalcular, reordenar: reordenar, detallarPlan: detallarPlan\n  };\n  if (typeof module !== \"undefined\" && module.exports) { module.exports = Motor; } else { root.Motor = Motor; }\n})(typeof window !== \"undefined\" ? window : globalThis);\n";
 ;
 /* =====================================================================
    MOTOR — dinero exacto, cotizaciones, tiempos y optimizador de rutas.
@@ -835,10 +836,10 @@ select.inp{appearance:none;padding-right:34px;background-image:url("data:image/s
 
   // Entrada del usuario en formato argentino: miles con punto, decimales con coma.
   // Nunca redondea: si sobran decimales, error. Si es ambiguo, error explicativo.
-  function parsearImporte(txt, moneda) {
+  function parsearImporte(txt, moneda, opts) {
     var m = MONEDAS[moneda]; if (!m) { return { error: "Elegí la moneda" }; }
     var s = String(txt || "").replace(/\s| /g, "").replace(/^(US\$|\$|€|USD|ARS|EUR)/i, "");
-    if (!s) { return { error: "Falta el importe" }; }
+    if (!s) { return (opts && opts.cero) ? { valor: "0" } : { error: "Falta el importe" }; }
     if (!/^[\d.,]+$/.test(s)) { return { error: "Solo números, puntos y coma" }; }
     var ent, fr = "";
     if (s.indexOf(",") >= 0) {
@@ -854,7 +855,7 @@ select.inp{appearance:none;padding-right:34px;background-image:url("data:image/s
     if (fr.length > m.dec) { return { error: moneda + " admite " + m.dec + " decimales. Corregí el importe" }; }
     ent = ent.replace(/^0+(?=\d)/, "");
     var canon = ent + (fr ? "." + fr : "");
-    if (dec(canon) <= 0n) { return { error: "El importe tiene que ser mayor que cero" }; }
+    if (!(opts && opts.cero) && dec(canon) <= 0n) { return { error: "El importe tiene que ser mayor que cero" }; }
     if (ent.length > 13) { return { error: "Importe fuera de rango" }; }
     return { valor: canon };
   }
@@ -904,6 +905,21 @@ select.inp{appearance:none;padding-right:34px;background-image:url("data:image/s
       return divCeil(mulCeil(v, dec(eur)), dec(usd));
     }
     return null;
+  }
+  // Convierte un importe de una moneda a otra (vía ARS), para calcular la otra punta
+  // de un cambio de moneda con la cotización del día. "lado": "compra" o "venta"
+  // (el lado con el que la casa opera esa moneda extranjera en esta transacción).
+  // Redondeo siempre hacia arriba (conservador, igual criterio que aUSD).
+  function convertir(importe, monedaOrigen, monedaDestino, tasas, lado) {
+    var v = dec(importe);
+    if (monedaOrigen === monedaDestino) { return aCanonico(v, MONEDAS[monedaDestino].dec); }
+    if (!tasas) { return null; }
+    function tasa(moneda) { var t = moneda === "USD" ? tasas.usd : moneda === "EUR" ? tasas.eur : null; return t && t[lado] ? dec(t[lado]) : null; }
+    function aArs(x, moneda) { if (moneda === "ARS") { return x; } var t = tasa(moneda); return t == null ? null : mulCeil(x, t); }
+    function deArs(x, moneda) { if (moneda === "ARS") { return x; } var t = tasa(moneda); return t == null ? null : divCeil(x, t); }
+    var enArs = aArs(v, monedaOrigen); if (enArs == null) { return null; }
+    var out = deArs(enArs, monedaDestino); if (out == null) { return null; }
+    return aCanonico(out, MONEDAS[monedaDestino].dec);
   }
 
   function normalizarCotizaciones(dolarapi, bluelytics, eurapi) {
@@ -1265,7 +1281,7 @@ select.inp{appearance:none;padding-right:34px;background-image:url("data:image/s
 
   var Motor = {
     MONEDAS: MONEDAS, dec: dec, aCanonico: aCanonico, aNumero: aNumero, parsearImporte: parsearImporte,
-    fmtNum: fmtNum, fmtDinero: fmtDinero, fmtCompacto: fmtCompacto, aUSD: aUSD,
+    fmtNum: fmtNum, fmtDinero: fmtDinero, fmtCompacto: fmtCompacto, aUSD: aUSD, convertir: convertir,
     normalizarCotizaciones: normalizarCotizaciones, tasasDe: tasasDe,
     haversine: haversine, matrizEstimada: matrizEstimada, prepararParadas: prepararParadas,
     evaluar: evaluar, proyectar: proyectar, alternativas: alternativas, recalcular: recalcular, reordenar: reordenar, detallarPlan: detallarPlan
@@ -1924,6 +1940,8 @@ var Datos = (function () {
   }
   async function iniciarViaje(id) { return chk(await sb.rpc("iniciar_viaje", { p_viaje: id })); }
   async function finalizarViaje(id) { return chk(await sb.rpc("finalizar_viaje", { p_viaje: id })); }
+  async function finalizarViajeForzado(id) { return chk(await sb.rpc("finalizar_viaje_forzado", { p_viaje: id })); }
+  async function ajustarEncima(viajeId, moneda, delta) { return chk(await sb.rpc("ajustar_encima", { p_viaje: viajeId, p_moneda: moneda, p_delta: delta })); }
   async function marcarParada(id, estado, nota) { return chk(await sb.rpc("marcar_parada", { p_id: id, p_estado: estado, p_nota: nota || null })); }
   async function reportarIncidente(parada, motivo, nota) { return chk(await sb.rpc("reportar_incidente", { p_parada: parada, p_motivo: motivo, p_nota: nota || null })); }
   async function reportarUbicacion(lat, lng, prec) { return chk(await sb.rpc("reportar_ubicacion", { p_lat: lat, p_lng: lng, p_prec: prec || null })); }
@@ -2006,7 +2024,7 @@ var Datos = (function () {
     auditoria: auditoria, crearRepartidor: crearRepartidor, cambiarClave: cambiarClave,
     planillas: planillas, planilla: planilla, guardarPlanilla: guardarPlanilla, borrarPlanilla: borrarPlanilla,
     verInvitacion: verInvitacion, crearInvitacion: crearInvitacion, invitaciones: invitaciones, borrarInvitacion: borrarInvitacion,
-    misViajes: misViajes, iniciarViaje: iniciarViaje, finalizarViaje: finalizarViaje, marcarParada: marcarParada, reportarIncidente: reportarIncidente, reportarUbicacion: reportarUbicacion,
+    misViajes: misViajes, iniciarViaje: iniciarViaje, finalizarViaje: finalizarViaje, finalizarViajeForzado: finalizarViajeForzado, ajustarEncima: ajustarEncima, marcarParada: marcarParada, reportarIncidente: reportarIncidente, reportarUbicacion: reportarUbicacion,
     escuchar: escuchar, cotizaciones: cotizaciones, cotizacionGuardada: cotizacionGuardada, buscarDireccion: buscarDireccion, direccionDe: direccionDe,
     coordsDeTexto: coordsDeTexto, matriz: matriz, geometria: geometria, usuario: function () { return yo; }
   };
@@ -2754,23 +2772,79 @@ var A = (function () {
     (p.montos || []).forEach(function (m) { if (sentido && m.sentido !== sentido) { return; } var u = Motor.aUSD(m.importe, m.moneda, t); if (u == null) { falta = true; } else { tot += u; } });
     return { usd: tot, falta: falta };
   }
-  // Carga actual de un viaje: entregas pendientes + retiros hechos (USD exacto)
+  // Carga actual de un viaje: entregas pendientes + retiros hechos (USD exacto),
+  // más la corrección manual que haya cargado el repartidor (ver Datos.ajustarEncima),
+  // por si recibió menos o más de lo que decía el plan.
   function cargaViaje(v) {
+    // Un viaje finalizado no necesariamente es "US$ 0": si se forzó el cierre con entregas
+    // pendientes, esas paradas se sueltan pero la plata sigue físicamente con el repartidor
+    // (queda como ajuste del viaje). Por eso no hay caso especial acá: se calcula igual que
+    // cualquier recorrido ya no "asignado" (entregas pendientes que quedan + retiros hechos),
+    // y el ajuste (si lo hay) se suma abajo como siempre.
     var ps = S.paradas.filter(function (p) { return p.viaje_id === v.id && p.estado !== "cancelada"; });
     var t = tasas(), carga = 0n, falta = false;
     if (v.estado === "asignado") {
-      ps.forEach(function (p) { (p.montos || []).forEach(function (m) { if (m.sentido === "entrega") { var u = Motor.aUSD(m.importe, m.moneda, t); if (u == null) { falta = true; } else { carga += u; } } }); });
-      return { usd: carga, falta: falta, salida: true };
-    }
-    if (v.estado === "finalizado") { return { usd: 0n, falta: false }; }
-    ps.forEach(function (p) {
-      (p.montos || []).forEach(function (m) {
-        var u = Motor.aUSD(m.importe, m.moneda, t); if (u == null) { falta = true; return; }
-        if (m.sentido === "entrega" && p.estado !== "completada") { carga += u; }
-        if (m.sentido === "retiro" && p.estado === "completada") { carga += u; }
+      // No es la suma de todas las entregas: si antes de una entrega hay un retiro en el
+      // camino, esa plata ya cubre parte de lo que sigue. Es el máximo que realmente llega
+      // a faltar, parada a parada en el orden del recorrido.
+      var ordenadas = ps.slice().sort(function (a, b) { return (a.orden || 0) - (b.orden || 0); });
+      var run = 0n;
+      ordenadas.forEach(function (p) {
+        var delta = 0n;
+        (p.montos || []).forEach(function (m) { var u = Motor.aUSD(m.importe, m.moneda, t); if (u == null) { falta = true; return; } delta += m.sentido === "entrega" ? u : -u; });
+        run += delta; if (run > carga) { carga = run; }
       });
+    } else {
+      ps.forEach(function (p) {
+        (p.montos || []).forEach(function (m) {
+          var u = Motor.aUSD(m.importe, m.moneda, t); if (u == null) { falta = true; return; }
+          if (m.sentido === "entrega" && p.estado !== "completada") { carga += u; }
+          if (m.sentido === "retiro" && p.estado === "completada") { carga += u; }
+        });
+      });
+    }
+    var ajustado = false;
+    Object.keys(v.ajustes || {}).forEach(function (k) {
+      var d = Motor.dec(v.ajustes[k]); if (d === 0n) { return; }
+      ajustado = true;
+      var u = Motor.aUSD(v.ajustes[k], k, t); if (u == null) { falta = true; } else { carga += u; }
     });
-    return { usd: carga, falta: falta };
+    return { usd: carga, falta: falta, salida: v.estado === "asignado", ajustado: ajustado };
+  }
+
+  // Cuánto efectivo tiene ENCIMA un repartidor ahora mismo, moneda por moneda, sin
+  // convertir (no hace falta cotización para esto: son los billetes que lleva de verdad).
+  // Suma todos sus recorridos del día ya arrancados (en curso o finalizados — un viaje
+  // "asignado" todavía no salió, no tiene nada encima) y no se resetea solo porque terminó:
+  // si quedó plata sin entregar de un cierre forzado, sigue apareciendo acá.
+  function efectivoRepartidor(repId) {
+    var out = {};
+    S.viajes.forEach(function (v) {
+      if (v.repartidor_id !== repId || v.estado === "asignado" || v.estado === "cancelado") { return; }
+      var ps = S.paradas.filter(function (p) { return p.viaje_id === v.id && p.estado !== "cancelada"; });
+      ps.forEach(function (p) {
+        (p.montos || []).forEach(function (m) {
+          var val = Motor.dec(m.importe);
+          if (m.sentido === "entrega" && p.estado !== "completada") { out[m.moneda] = (out[m.moneda] || 0n) + val; }
+          if (m.sentido === "retiro" && p.estado === "completada") { out[m.moneda] = (out[m.moneda] || 0n) + val; }
+        });
+      });
+      Object.keys(v.ajustes || {}).forEach(function (k) { out[k] = (out[k] || 0n) + Motor.dec(v.ajustes[k]); });
+    });
+    return out;
+  }
+  var ORDEN_MON = ["USD", "ARS", "EUR"];
+  function monedasConPlata(mapa) {
+    return Object.keys(mapa || {}).filter(function (k) { return mapa[k] !== 0n; })
+      .sort(function (a, b) { return ORDEN_MON.indexOf(a) - ORDEN_MON.indexOf(b); });
+  }
+  // Texto legible de un mapa {moneda: BigInt} (el de efectivoRepartidor): "US$ 1.234 · $ 500.000"
+  function textoEfectivo(mapa, compacto) {
+    return monedasConPlata(mapa).map(function (k) { return Motor.fmtDinero(mapa[k], k, { compacto: compacto }); }).join(" · ");
+  }
+  // Versión corta para espacios chicos (chips de repartidor): "US$1,2k $500k"
+  function textoEfectivoCorto(mapa) {
+    return monedasConPlata(mapa).map(function (k) { return Motor.MONEDAS[k].simbolo + Motor.fmtCompacto(mapa[k]); }).join(" ");
   }
 
   // Horas estimadas en vivo de un recorrido (se corrigen solas si se atrasa o adelanta)
@@ -2987,7 +3061,8 @@ var A = (function () {
 
   return { S: S, vistas: vistas, iniciar: iniciar, ir: ir, refrescar: refrescar, cargarBase: cargarBase, repDe: repDe, colorRep: colorRep, viajeDe: viajeDe,
     repartidores: repartidores, tasas: tasas, tope: tope, topeNum: topeNum, base: base, proy: proy, etaParada: etaParada, pillEstado: pillEstado, chipMonto: chipMonto, usdParada: usdParada,
-    cargaViaje: cargaViaje, ESTADOS: ESTADOS, PALETA: PALETA, pintarCot: pintarCot, cambiarFecha: cambiarFecha };
+    cargaViaje: cargaViaje, efectivoRepartidor: efectivoRepartidor, textoEfectivo: textoEfectivo, textoEfectivoCorto: textoEfectivoCorto,
+    ESTADOS: ESTADOS, PALETA: PALETA, pintarCot: pintarCot, cambiarFecha: cambiarFecha };
 })();
 
 ;
@@ -3069,7 +3144,8 @@ var A = (function () {
             h("div.n", h("b", rep.nombre), h("span", hechas + " de " + ps.length + " paradas" + (finV ? " · fin " + UI.hhmm(finV) : ""),
               dif ? h("b", { style: { color: pr.atrasoFin > 0 ? "var(--warn)" : "var(--ok)", fontWeight: 600 } }, " " + dif) : null)), est),
           h("div.segs", ps.map(function (p) { return h("i", { class: p.estado === "completada" ? "ok" : p.estado === "fallida" ? "bad" : p === cur && v.estado === "en_curso" ? "cur" : "" }); })),
-          h("div.carga", h("span", carga.salida ? "Sale con" : "Lleva"), h("div.med" + (excede ? ".bad" : ""), h("i", { style: { width: pct + "%" } })),
+          h("div.carga", h("span", carga.salida ? "Sale con" : "Lleva", carga.ajustado ? h("span", { title: "Corregido a mano por " + rep.nombre.split(" ")[0], style: { marginLeft: "5px", color: "var(--accent-2)" } }, ic("editar", "sm")) : null),
+            h("div.med" + (excede ? ".bad" : ""), h("i", { style: { width: pct + "%" } })),
             h("b.num", { style: { color: excede ? "var(--bad)" : "var(--ink)" } }, "US$ " + Motor.fmtCompacto(carga.usd))));
         if (sel) {
           if (v.estado === "en_curso") {
@@ -3094,15 +3170,106 @@ var A = (function () {
       }
     }
 
+    // Solo lo que ya se completó (no depende de lo pendiente, que se puede corregir en el
+    // diálogo de abajo) + lo que ya tuviera de ajuste manual.
+    function retirosCompletados(ps) {
+      var out = {};
+      ps.forEach(function (p) { if (p.estado !== "completada") { return; } (p.montos || []).forEach(function (m) { if (m.sentido === "retiro") { out[m.moneda] = (out[m.moneda] || 0n) + Motor.dec(m.importe); } }); });
+      return out;
+    }
     async function finalizarViaje(v) {
       var rep = A.repDe(v.repartidor_id) || { nombre: "el repartidor" };
-      var pend = paradasDeViaje(v).filter(function (p) { return p.estado === "asignada" || p.estado === "en_camino"; });
-      var ok = await UI.confirmar("Finalizar recorrido", h("div", h("p", "Vas a cerrar el recorrido de " + rep.nombre + "."),
-        pend.length ? h("p", { style: { color: "var(--bad)" } }, "Le quedan " + pend.length + " parada" + (pend.length > 1 ? "s" : "") + " sin resolver: no se va a poder finalizar hasta que se resuelvan o se marquen con problema.") : null),
+      var todas = paradasDeViaje(v);
+      var pend = todas.filter(function (p) { return p.estado === "asignada" || p.estado === "en_camino"; });
+      if (!pend.length) {
+        var ok = await UI.confirmar("Finalizar recorrido", h("p", "Vas a cerrar el recorrido de " + rep.nombre + "."), { si: "Finalizar" });
+        if (!ok) { return; }
+        try { await Datos.finalizarViaje(v.id); UI.toast("Recorrido finalizado"); await A.refrescar(); }
+        catch (e) { UI.toast(UI.mensajeError(e), "bad"); }
+        return;
+      }
+      // Antes de cerrar con paradas pendientes: se le pregunta al admin si algo de lo
+      // pendiente (el monto del envío) o el efectivo final del repartidor no es lo que
+      // dice el plan — por si ya se resolvió algo a medias antes de tener que cortar.
+      var filasMonto = [];
+      pend.forEach(function (p) { (p.montos || []).forEach(function (m) {
+        var inp = h("input.inp.num", { value: Motor.fmtNum(Motor.dec(m.importe), Motor.MONEDAS[m.moneda].dec).replace(/,00$/, ""), inputmode: "decimal", style: { width: "130px" }, oninput: function () { recalcular(); } });
+        filasMonto.push({ p: p, m: m, inp: inp });
+      }); });
+      var listaPend = h("div", { style: { display: "flex", flexDirection: "column", gap: "8px", margin: "8px 0 4px" } },
+        pend.map(function (p) {
+          var filas = filasMonto.filter(function (f) { return f.p.id === p.id; });
+          return h("div", { style: { padding: "8px 10px", border: "1px solid var(--line)", borderRadius: "10px" } },
+            h("div", { style: { fontSize: "12.5px", fontWeight: 600, marginBottom: "6px" } }, p.cliente_nombre),
+            filas.map(function (f) { return h("div", { style: { display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" } },
+              h("span", { style: { fontSize: "12px", color: "var(--muted)", minWidth: "95px" } }, (f.m.sentido === "entrega" ? "Entregaba " : "Retiraba ") + f.m.moneda), f.inp); }));
+        }));
+      var retCompl = retirosCompletados(todas), ajustesPrevios = v.ajustes || {};
+      var tocadoMon = {}, filasEf = {};
+      ["USD", "ARS", "EUR"].forEach(function (k) { filasEf[k] = h("input.inp.num", { style: { width: "130px" }, oninput: function () { tocadoMon[k] = true; } }); });
+      function pendientePorMoneda() {
+        var out = {};
+        filasMonto.forEach(function (f) {
+          if (f.m.sentido !== "entrega") { return; }
+          var r = Motor.parsearImporte(f.inp.value, f.m.moneda, { cero: true });
+          out[f.m.moneda] = (out[f.m.moneda] || 0n) + (r.error ? Motor.dec(f.m.importe) : Motor.dec(r.valor));
+        });
+        return out;
+      }
+      function recalcular() {
+        var pendientes = pendientePorMoneda();
+        ["USD", "ARS", "EUR"].forEach(function (k) {
+          if (tocadoMon[k]) { return; }
+          var t = (retCompl[k] || 0n) + (ajustesPrevios[k] ? Motor.dec(ajustesPrevios[k]) : 0n) + (pendientes[k] || 0n);
+          filasEf[k].value = t !== 0n ? Motor.fmtNum(t, Motor.MONEDAS[k].dec).replace(/,00$/, "") : "";
+        });
+      }
+      recalcular();
+      var filasEfEl = h("div", { style: { display: "flex", flexDirection: "column", gap: "6px", margin: "6px 0" } },
+        ["USD", "ARS", "EUR"].map(function (k) { return h("div", { style: { display: "flex", alignItems: "center", gap: "8px" } },
+          h("span", { style: { fontSize: "12px", color: "var(--muted)", minWidth: "95px" } }, Motor.MONEDAS[k].nombre), filasEf[k]); }));
+      var chk = h("input", { type: "checkbox", id: "chk-forzar" });
+      var ok2 = await UI.confirmar("Finalizar recorrido", h("div", { style: { maxHeight: "62vh", overflow: "auto" } }, h("p", "Vas a cerrar el recorrido de " + rep.nombre + "."),
+        h("p", { style: { color: "var(--bad)" } }, "Le quedan " + pend.length + " parada" + (pend.length > 1 ? "s" : "") + " sin resolver."),
+        h("label", { style: { display: "flex", gap: "10px", alignItems: "flex-start", marginTop: "6px", fontSize: "13px" } }, chk,
+          h("span", "Finalizar igual. " + (pend.length > 1 ? "Esas paradas quedan" : "Esa parada queda") + " sin asignar, para replanificarlas después.")),
+        h("p", { style: { margin: "14px 0 0", fontSize: "12.5px", fontWeight: 600 } }, "¿Algo de lo pendiente ya se resolvió parcial o distinto? Corregilo acá:"),
+        listaPend,
+        h("p", { style: { margin: "10px 0 0", fontSize: "12.5px", fontWeight: 600 } }, "Con esto, " + rep.nombre.split(" ")[0] + " le va a quedar encima (podés corregirlo vos):"),
+        filasEfEl),
         { si: "Finalizar" });
-      if (!ok) { return; }
-      try { await Datos.finalizarViaje(v.id); UI.toast("Recorrido finalizado"); await A.refrescar(); }
-      catch (e) { UI.toast(UI.mensajeError(e), "bad"); }
+      if (!ok2) { return; }
+      if (!chk.checked) { UI.toast("Confirmá el cuadrito para finalizar con paradas pendientes", "bad"); return; }
+      try {
+        // 1) si se corrigió algún monto pendiente, se guarda antes de soltar la parada para
+        // replanificar, así queda con el importe correcto la próxima vez.
+        for (var i = 0; i < pend.length; i++) {
+          var p = pend[i], filas = filasMonto.filter(function (f) { return f.p.id === p.id; });
+          var cambiaron = false;
+          var nuevosMontos = filas.map(function (f) {
+            var r = Motor.parsearImporte(f.inp.value, f.m.moneda, { cero: true });
+            if (r.error || Motor.dec(r.valor) === Motor.dec(f.m.importe)) { return { sentido: f.m.sentido, moneda: f.m.moneda, importe: f.m.importe }; }
+            cambiaron = true; return { sentido: f.m.sentido, moneda: f.m.moneda, importe: r.valor };
+          });
+          if (cambiaron) {
+            await Datos.guardarParada({ id: p.id, cliente_id: p.cliente_id, cliente_nombre: p.cliente_nombre, direccion: p.direccion, detalle: p.detalle, telefono: p.telefono, notas: p.notas,
+              lat: p.lat, lng: p.lng, fecha: p.fecha, hora: p.hora, montos: nuevosMontos, guardar_cliente: false,
+              viaje_id: p.viaje_id, orden: p.orden, estado: p.estado, eta: p.eta, resuelta_en: p.resuelta_en });
+          }
+        }
+        // 2) se cierra el viaje: el servidor ya congela como ajuste lo pendiente que quedó (con
+        // los montos corregidos arriba, si se tocaron).
+        await Datos.finalizarViajeForzado(v.id);
+        // 3) si el admin corrigió a mano el efectivo final de alguna moneda, se fija ese número exacto.
+        for (var k in tocadoMon) {
+          if (!tocadoMon[k]) { continue; }
+          var r2 = Motor.parsearImporte(filasEf[k].value, k, { cero: true }); if (r2.error) { continue; }
+          var nuevoAjuste = Motor.dec(r2.valor) - (retCompl[k] || 0n);
+          await Datos.ajustarEncima(v.id, k, Motor.aCanonico(nuevoAjuste, Motor.MONEDAS[k].dec));
+        }
+        UI.toast("Recorrido finalizado. " + pend.length + " parada" + (pend.length > 1 ? "s liberadas" : " liberada") + " para replanificar.");
+        await A.refrescar();
+      } catch (e) { UI.toast(UI.mensajeError(e), "bad"); }
     }
 
     function pintarAlertas() {
@@ -3268,11 +3435,12 @@ var A = (function () {
         h("div.campo", h("label", "Repartidores disponibles"),
           disp.length ? h("div.reps", disp.map(function (r) {
             var on = st.reps.indexOf(r.id) >= 0, ocupado = repOcupado(r.id);
+            var efTxt = A.textoEfectivoCorto(A.efectivoRepartidor(r.id));
             return h("button.rep-chip", { style: { "--c": r.color }, "aria-pressed": on ? "true" : "false",
-              title: ocupado ? "Tiene un recorrido en curso ahora. Este plan se le suma para después." : "", onclick: function () {
+              title: (ocupado ? "Tiene un recorrido en curso ahora. Este plan se le suma para después. " : "") + (efTxt ? "Tiene encima: " + efTxt : ""), onclick: function () {
               if (on) { st.reps = st.reps.filter(function (x) { return x !== r.id; }); } else { st.reps.push(r.id); }
               st.res = null; pintarTodo();
-            } }, h("span.av.sm", { style: { "--c": r.color } }, UI.iniciales(r.nombre)), r.nombre.split(" ")[0] + (ocupado ? " · en ruta" : ""));
+            } }, h("span.av.sm", { style: { "--c": r.color } }, UI.iniciales(r.nombre)), r.nombre.split(" ")[0] + (ocupado ? " · en ruta" : "") + (efTxt ? " · " + efTxt : ""));
           })) : h("div.ayuda.err", "No hay repartidores libres. ", h("a", { href: "#", onclick: function (e) { e.preventDefault(); A.ir("equipo"); } }, "Agregá uno"))),
         h("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" } },
           h("div.campo", h("label", "Salida desde la base"), h("input.inp", { type: "time", value: st.salida, onchange: function (e) { st.salida = e.target.value || st.salida; st.res = null; pintarTodo(); } })),
@@ -3679,6 +3847,33 @@ var A = (function () {
 
     // --- montos ---
     var montosEl = h("div.montos-ed"), resumenEl = h("div");
+    var ultimoIdx = null;   // último monto tocado, para saber cuál calcular con el otro en un cambio de moneda
+    var NOM_COT = { blue: "blue", oficial: "oficial", bolsa: "MEP" };
+    function esCambio() {
+      if (d.montos.length !== 2 || d.montos[0].sentido === d.montos[1].sentido || d.montos[0].moneda === d.montos[1].moneda) { return false; }
+      return d.montos[0].moneda === "ARS" || d.montos[1].moneda === "ARS";
+    }
+    function ladoCambio() {   // "compra": el cliente le vende esa moneda a la casa (la retira el repartidor) · "venta": se la compra
+      var fx = d.montos[0].moneda !== "ARS" ? d.montos[0] : d.montos[1];
+      return fx.sentido === "retiro" ? "compra" : "venta";
+    }
+    function origenDestino() {
+      if (ultimoIdx === 0 || ultimoIdx === 1) { return { origen: ultimoIdx, destino: 1 - ultimoIdx }; }
+      if (d.montos[0].importe && !d.montos[1].importe) { return { origen: 0, destino: 1 }; }
+      if (d.montos[1].importe && !d.montos[0].importe) { return { origen: 1, destino: 0 }; }
+      return null;
+    }
+    function calcular(oi, di, lado) {
+      var om = d.montos[oi], dm = d.montos[di];
+      var r = Motor.parsearImporte(om.importe, om.moneda);
+      if (r.error) { UI.toast("Revisá el importe en " + om.moneda + " antes de calcular", "bad"); return; }
+      var t = A.tasas();
+      var res = t && Motor.convertir(r.valor, om.moneda, dm.moneda, t, lado);
+      if (res == null) { UI.toast("Falta la cotización de hoy para calcularlo", "bad"); return; }
+      dm.importe = Motor.fmtNum(Motor.dec(res), Motor.MONEDAS[dm.moneda].dec).replace(/,00$/, "");
+      ultimoIdx = oi; pintarMontos();
+      var ins = montosEl.querySelectorAll("input.inp.num"); if (ins[di]) { ins[di].focus(); }
+    }
     function pintarMontos() {
       UI.limpiar(montosEl);
       d.montos.forEach(function (m, i) {
@@ -3692,22 +3887,33 @@ var A = (function () {
           else { err.textContent = ""; inp.classList.remove("err"); prev.textContent = "= " + Motor.fmtDinero(r.valor, m.moneda); prev.className = "ayuda"; }
           pintarResumen();
         }
-        inp.addEventListener("input", function () { m.importe = inp.value; validar(false); });
+        inp.addEventListener("input", function () { m.importe = inp.value; ultimoIdx = i; validar(false); });
+        inp.addEventListener("focus", function () { ultimoIdx = i; });
         inp.addEventListener("blur", function () { validar(true); });
         var seg = h("div.seg", ["entrega", "retiro"].map(function (s) {
-          return h("button." + (s === "entrega" ? "e" : "r"), { type: "button", disabled: soloLectura, "aria-pressed": m.sentido === s ? "true" : "false", onclick: function () { m.sentido = s; pintarMontos(); } },
+          return h("button." + (s === "entrega" ? "e" : "r"), { type: "button", disabled: soloLectura, "aria-pressed": m.sentido === s ? "true" : "false", onclick: function () { m.sentido = s; ultimoIdx = null; pintarMontos(); } },
             ic(s, "sm"), s === "entrega" ? "Entregar" : "Retirar");
         }));
-        var sel = h("select.inp", { disabled: soloLectura, "aria-label": "Moneda", onchange: function (e) { m.moneda = e.target.value; validar(true); } },
+        var sel = h("select.inp", { disabled: soloLectura, "aria-label": "Moneda", onchange: function (e) { m.moneda = e.target.value; ultimoIdx = null; validar(true); } },
           Object.keys(Motor.MONEDAS).map(function (k) { return h("option", { value: k, selected: m.moneda === k }, k); }));
         montosEl.appendChild(h("div.monto-f", seg, sel, h("div", inp, err, prev),
-          d.montos.length > 1 && !soloLectura ? h("button.btn.ghost.icon", { type: "button", "aria-label": "Quitar monto", style: { "--h": "40px" }, onclick: function () { d.montos.splice(i, 1); pintarMontos(); } }, ic("x", "sm")) : h("span")));
+          d.montos.length > 1 && !soloLectura ? h("button.btn.ghost.icon", { type: "button", "aria-label": "Quitar monto", style: { "--h": "40px" }, onclick: function () { d.montos.splice(i, 1); ultimoIdx = null; pintarMontos(); } }, ic("x", "sm")) : h("span")));
         validar(false);
       });
+      if (esCambio() && !soloLectura) {
+        var t = A.tasas(), lado = ladoCambio(), fx = d.montos[0].moneda !== "ARS" ? d.montos[0] : d.montos[1];
+        var rate = t && (fx.moneda === "EUR" ? t.eur : t.usd)[lado];
+        var od = origenDestino();
+        montosEl.appendChild(h("div.resumen-eq", { style: { flexWrap: "wrap", rowGap: "6px" } },
+          h("span", ic("refrescar", "sm"), " Cambio de moneda", h("small", { style: { display: "block", fontWeight: 400 } },
+            rate ? "según " + (NOM_COT[t.tipo] || t.tipo) + " " + lado + " " + Motor.fmtDinero(rate, "ARS") : "falta la cotización de hoy")),
+          rate && od ? h("button.btn.ghost.sm", { type: "button", onclick: function () { calcular(od.origen, od.destino, lado); } },
+            ic("flecha", "sm"), "Calcular " + d.montos[od.destino].moneda) : null));
+      }
       if (!soloLectura) {
         montosEl.appendChild(h("button.btn.ghost.sm", { type: "button", style: { alignSelf: "flex-start" }, onclick: function () {
           var ult = d.montos[d.montos.length - 1];
-          d.montos.push({ sentido: ult && ult.sentido === "entrega" ? "retiro" : "entrega", moneda: ult && ult.moneda === "USD" ? "ARS" : "USD", importe: "" }); pintarMontos();
+          d.montos.push({ sentido: ult && ult.sentido === "entrega" ? "retiro" : "entrega", moneda: ult && ult.moneda === "USD" ? "ARS" : "USD", importe: "" }); ultimoIdx = null; pintarMontos();
           var ins = montosEl.querySelectorAll("input.inp.num"); ins[ins.length - 1].focus();
         } }, ic("mas", "sm"), "Agregar monto (ej.: entrega dólares y retira pesos)"));
       }
@@ -4076,6 +4282,8 @@ var A = (function () {
       var enCurso = vs.some(function (v) { return v.estado === "en_curso"; });
       var u = S.ubic.find(function (x) { return x.repartidor_id === r.id; });
       var esCons = r.rol === "consulta";
+      var ef = !esAdmin && !esCons ? A.efectivoRepartidor(r.id) : null;
+      var efTxt = ef ? A.textoEfectivo(ef) : "";
       var estado = !r.activo ? h("span.pill.bad", "Desactivado")
         : esAdmin ? h("span.pill.acc", ic("escudo", "sm"), "Acceso total")
         : esCons ? h("span.pill.info", ic("ojo", "sm"), "Solo lectura")
@@ -4088,6 +4296,7 @@ var A = (function () {
             h("div", { style: { fontSize: "12.5px", color: "var(--muted)", display: "flex", alignItems: "center", gap: "6px", marginTop: "5px", flexWrap: "wrap" } },
               estado, r.activo && !esAdmin && enCurso && u ? h("span", "GPS " + UI.hace(u.en)) : null)),
           h("button.btn.ghost.icon.sm", { "aria-label": "Editar a " + r.nombre, onclick: function () { editarPersona(r); } }, ic("editar", "sm"))),
+        ef ? h("div.resumen-eq", { style: { margin: "12px 0 0" } }, h("span", ic("dolar", "sm"), "Tiene encima"), h("b", efTxt || "Nada")) : null,
         esCons
           ? h("div.st", { style: { gridTemplateColumns: "1fr 1fr" } },
               h("div", h("small", "Puede ver"), h("b", { style: { fontSize: "13px", fontFamily: "var(--font)" } }, "Planillas")),
@@ -4388,13 +4597,37 @@ var R = (function () {
   }
   function encima(v, ps) {
     var t = {};
+    if (v.estado === "asignado") {
+      // Cuánto hace falta salir con, moneda por moneda: no es la suma de todas las entregas,
+      // porque si antes de una entrega hay un retiro (recoge plata en el camino), esa plata ya
+      // cubre parte de lo que sigue. Se calcula el máximo que realmente llega a faltar, parada
+      // a parada en el orden del recorrido (ps ya viene ordenada por p.orden).
+      var run = {};
+      ps.forEach(function (p) {
+        var delta = {};
+        (p.montos || []).forEach(function (m) { var val = Motor.dec(m.importe); delta[m.moneda] = (delta[m.moneda] || 0n) + (m.sentido === "entrega" ? val : -val); });
+        Object.keys(delta).forEach(function (k) {
+          run[k] = (run[k] || 0n) + delta[k];
+          if (run[k] > (t[k] || 0n)) { t[k] = run[k]; }
+        });
+      });
+      return t;
+    }
     ps.forEach(function (p) { (p.montos || []).forEach(function (m) {
       var x = t[m.moneda] = t[m.moneda] || 0n; var val = Motor.dec(m.importe);
-      if (v.estado === "asignado") { if (m.sentido === "entrega") { t[m.moneda] = x + val; } return; }
       if (m.sentido === "entrega" && p.estado !== "completada") { t[m.moneda] = x + val; }
       if (m.sentido === "retiro" && p.estado === "completada") { t[m.moneda] = x + val; }
     }); });
     return t;
+  }
+  // Lo calculado según el plan + la corrección manual que hayas cargado (por si te dieron
+  // menos o más de lo esperado). Se guarda como diferencia, así sigue solo a medida que
+  // avanza el recorrido en vez de quedar pisado con un número viejo.
+  function efectivo(v, enc) {
+    var aj = v.ajustes || {}, out = {};
+    Object.keys(enc).forEach(function (k) { out[k] = enc[k]; });
+    Object.keys(aj).forEach(function (k) { out[k] = (out[k] || 0n) + Motor.dec(aj[k]); });
+    return out;
   }
 
   async function cargar() {
@@ -4486,19 +4719,21 @@ var R = (function () {
     seguir(v.estado === "en_curso");
 
     // hero
-    var enc = encima(v, ps), monedas = Object.keys(enc).filter(function (k) { return enc[k] > 0n; });
+    var enc = encima(v, ps), ef = efectivo(v, enc), monedas = Object.keys(enc).filter(function (k) { return enc[k] > 0n; });
     var pr = proy(v), fin = pr && pr.fin != null ? pr.fin : v.metricas && v.metricas.fin;
     var finEl = h("b", fin ? UI.hhmm(fin) : "—"), difEl = h("small", { style: { display: "block", fontSize: "11px", color: pr && pr.atrasoFin > 0 ? "var(--warn)" : "var(--ok)" } }, pr ? UI.atraso(pr.atrasoFin) : "");
     S.vivo = { v: v, finEl: finEl, difEl: difEl, items: [], proxEl: null, proxP: null };
     var an = h("div.anillo", Graf.anillo(hechas.length, ps.length, col), h("div.v", h("span", hechas.length + "/" + ps.length), h("small", "paradas")));
+    var encHijos = [h("div.h", h("span", v.estado === "asignado" ? "Salís con" : "Llevás encima"), h("span", ic(monedas.length ? "editar" : "escudo", "sm"))),
+      h("div.ms", monedas.length ? monedas.map(function (k) { return h("span", Motor.fmtDinero(ef[k], k, { compacto: true })); }) : h("span", { style: { color: "var(--muted)" } }, "Nada"))];
+    var encEl = monedas.length ? h("button.encima", { type: "button", style: { display: "block", width: "100%", textAlign: "left" }, onclick: function () { corregirEncima(v, enc); } }, encHijos) : h("div.encima", encHijos);
     cont.appendChild(h("section.hero", { style: { "--c": col } },
       h("div.fila", an, h("div.dat",
         h("div", h("small", v.estado === "asignado" ? "Salida" : "Estado"), h("b", v.estado === "asignado" ? (v.salida ? UI.horaDe(v.salida) : "—") : v.estado === "en_curso" ? "En curso" : "Terminado")),
         h("div", h("small", "Fin estimado"), finEl, difEl),
         h("div", h("small", "Recorrido"), h("b.num", v.metricas && v.metricas.dist ? UI.km(v.metricas.dist) : "—")),
         h("div", h("small", "Quedan"), h("b", String(ps.length - hechas.length))))),
-      h("div.encima", h("div.h", h("span", v.estado === "asignado" ? "Salís con" : "Llevás encima"), h("span", ic("escudo", "sm"))),
-        h("div.ms", monedas.length ? monedas.map(function (k) { return h("span", Motor.fmtDinero(enc[k], k, { compacto: true })); }) : h("span", { style: { color: "var(--muted)" } }, "Nada")))));
+      encEl));
 
     if (v.estado === "asignado") {
       cont.appendChild(h("div", { style: { margin: "14px 16px 0", display: "flex", flexDirection: "column", gap: "10px" } },
@@ -4591,31 +4826,131 @@ var R = (function () {
     return { el: el, reset: function () { hecho = false; x = 0; el.classList.add("hecho"); per.style.left = "6px"; fill.style.width = "0"; UI.reemplazar(per, ic("flecha", "lg")); } };
   }
 
+  // Corregir cuánto llevás encima → guarda la diferencia contra lo calculado (no pisa
+  // un valor fijo), y el administrador lo ve reflejado al toque en su pantalla.
+  function corregirEncima(v, enc) {
+    var monedas = Object.keys(enc).filter(function (k) { return enc[k] > 0n; });
+    var filas = monedas.map(function (k) {
+      var ef = (enc[k] || 0n) + (v.ajustes && v.ajustes[k] ? Motor.dec(v.ajustes[k]) : 0n);
+      var inp = h("input.inp.num", { value: Motor.fmtNum(ef, Motor.MONEDAS[k].dec).replace(/,00$/, ""), inputmode: "decimal", "aria-label": "Efectivo real en " + Motor.MONEDAS[k].nombre });
+      var err = h("div.ayuda");
+      return { moneda: k, calc: enc[k], inp: inp, err: err,
+        el: h("div.campo", h("label", Motor.MONEDAS[k].nombre + " — el plan dice " + Motor.fmtDinero(enc[k], k)), inp, err) };
+    });
+    var btn = h("button.btn.pri.lg.block", { onclick: guardar }, ic("check", "sm"), "Guardar");
+    var sh = UI.sheet([h("h3", { style: { margin: "0 0 4px", fontSize: "20px", letterSpacing: "-.02em" } }, "¿Cuánto llevás realmente?"),
+      h("p", { style: { margin: "0 0 14px", color: "var(--muted)" } }, "Si te dieron menos (o más) de lo que dice el plan, corregilo acá. El administrador lo ve reflejado enseguida."),
+      filas.map(function (f) { return f.el; }),
+      btn, h("button.btn.ghost.lg.block", { style: { marginTop: "6px" }, onclick: function () { sh.cerrar(); } }, "Cancelar")]);
+    async function guardar() {
+      var ok = true, cambios = [];
+      filas.forEach(function (f) {
+        var r = Motor.parsearImporte(f.inp.value, f.moneda, { cero: true });
+        if (r.error) { f.err.textContent = r.error; f.err.className = "ayuda err"; f.inp.classList.add("err"); ok = false; return; }
+        f.err.textContent = ""; f.inp.classList.remove("err");
+        var delta = Motor.dec(r.valor) - f.calc;
+        var previo = v.ajustes && v.ajustes[f.moneda] ? Motor.dec(v.ajustes[f.moneda]) : 0n;
+        if (delta !== previo) { cambios.push({ moneda: f.moneda, delta: Motor.aCanonico(delta, Motor.MONEDAS[f.moneda].dec) }); }
+      });
+      if (!ok) { return; }
+      if (!cambios.length) { sh.cerrar(); return; }
+      await UI.conCarga(btn, async function () {
+        try {
+          for (var i = 0; i < cambios.length; i++) { await Datos.ajustarEncima(v.id, cambios[i].moneda, cambios[i].delta); }
+          sh.cerrar(); UI.toast("Actualizado"); await cargar(); pintar();
+        } catch (e) { UI.toast(UI.mensajeError(e), "bad"); }
+      });
+    }
+  }
+
   // Problema → queda registrado + WhatsApp al admin con el mensaje listo
   function problema(v, p) {
-    var MOT = [["Cliente ausente", "ausente"], ["Dirección incorrecta", "pin"], ["Monto no coincide", "dolar"], ["Demora / tránsito", "auto"], ["Riesgo de seguridad", "escudo"], ["Otro", "info"]];
+    var MOT = [["Cliente ausente", "ausente"], ["Dirección incorrecta", "pin"], ["Monto no coincide", "dolar"], ["Recibió algo imprevisto", "alerta"], ["Demora / tránsito", "auto"], ["Riesgo de seguridad", "escudo"], ["Otro", "info"]];
+    var REQ_NOTA = ["Recibió algo imprevisto", "Otro"];   // acá el mensaje ES el reporte: no se manda vacío
     var st = { motivo: null, nota: "", fallida: false };
     var grid = h("div.motivos");
-    function pintarM() { UI.reemplazar(grid, MOT.map(function (m) { return h("button.motivo", { "aria-pressed": st.motivo === m[0] ? "true" : "false", onclick: function () { st.motivo = m[0]; if (m[0] === "Cliente ausente" || m[0] === "Dirección incorrecta") { st.fallida = true; sw.setAttribute("aria-checked", "true"); } pintarM(); } }, ic(m[1]), m[0]); })); }
+    // "Monto no coincide" → además de avisar, pedimos cuánto fue realmente y corregimos
+    // el efectivo encima al toque (misma lógica delta que corregirEncima), así no queda
+    // solo como un texto suelto que alguien tiene que ir a sumar a mano.
+    var montosP = p.montos || [];
+    var montoFilas = montosP.map(function (m) {
+      var plan = Motor.dec(m.importe);
+      var inp = h("input.inp.num", { value: Motor.fmtNum(plan, Motor.MONEDAS[m.moneda].dec).replace(/,00$/, ""), inputmode: "decimal", "aria-label": (m.sentido === "entrega" ? "Entregaste realmente en " : "Cobraste realmente en ") + Motor.MONEDAS[m.moneda].nombre });
+      var err = h("div.ayuda");
+      return { m: m, plan: plan, inp: inp, err: err,
+        el: h("div.campo", h("label", (m.sentido === "entrega" ? "Entregaste" : "Cobraste") + " en " + Motor.MONEDAS[m.moneda].nombre + " — el plan decía " + Motor.fmtDinero(plan, m.moneda)), inp, err) };
+    });
+    var montosWrap = montoFilas.length ? h("div", { style: { display: "none", margin: "2px 0 12px" } },
+      h("p", { style: { margin: "0 0 8px", fontSize: "13px", color: "var(--muted)" } }, "¿Cuánto fue realmente? Corrige tu efectivo al toque."),
+      montoFilas.map(function (f) { return f.el; })
+    ) : null;
+    function pintarM() {
+      UI.reemplazar(grid, MOT.map(function (m) { return h("button.motivo", { "aria-pressed": st.motivo === m[0] ? "true" : "false", onclick: function () { st.motivo = m[0]; if (m[0] === "Cliente ausente" || m[0] === "Dirección incorrecta") { st.fallida = true; sw.setAttribute("aria-checked", "true"); } pintarM(); actualizarNota(); } }, ic(m[1]), m[0]); }));
+      if (montosWrap) { montosWrap.style.display = st.motivo === "Monto no coincide" ? "" : "none"; }
+    }
     var sw = h("button.switch", { role: "switch", "aria-checked": "false", onclick: function () { st.fallida = !st.fallida; sw.setAttribute("aria-checked", st.fallida ? "true" : "false"); } });
     pintarM();
+    var notaErr = h("div.ayuda");
+    var notaEl = h("textarea.inp", { placeholder: "Contá en pocas palabras (opcional)", oninput: function (e) { st.nota = e.target.value; if (notaErr.textContent) { actualizarNota(); } } });
+    function actualizarNota() {
+      var req = REQ_NOTA.indexOf(st.motivo) >= 0;
+      notaEl.placeholder = req ? "Contá qué pasó — este mensaje es lo que va a leer " + admNombre() : "Contá en pocas palabras (opcional)";
+      if (req && !st.nota.trim()) { notaErr.textContent = "Escribí el mensaje para " + admNombre(); notaErr.className = "ayuda err"; notaEl.classList.add("err"); }
+      else { notaErr.textContent = ""; notaEl.classList.remove("err"); }
+    }
+    function admNombre() { return "el administrador"; }
+    actualizarNota();
     var btn = h("button.btn.pri.xl.block", { style: { background: "#25D366", color: "#052e16", boxShadow: "none" }, onclick: enviar }, ic("wa"), S.config && S.config.admin_whatsapp ? "Avisar por WhatsApp" : "Registrar problema");
     var sh = UI.sheet([h("h3", { style: { margin: "0 0 4px", fontSize: "20px", letterSpacing: "-.02em" } }, "¿Qué pasó?"), h("p", { style: { margin: 0, color: "var(--muted)" } }, p.cliente_nombre + " · " + p.direccion),
-      grid, h("textarea.inp", { placeholder: "Contá en pocas palabras (opcional)", oninput: function (e) { st.nota = e.target.value; } }),
+      grid, montosWrap, notaEl, notaErr,
       h("label", { style: { display: "flex", alignItems: "center", gap: "12px", margin: "14px 0", fontWeight: 600 } }, sw, "No se pudo completar esta parada"),
       btn, h("button.btn.ghost.lg.block", { style: { marginTop: "6px" }, onclick: function () { sh.cerrar(); } }, "Cancelar")]);
     async function enviar() {
       if (!st.motivo) { UI.toast("Elegí qué pasó", "bad"); return; }
+      if (REQ_NOTA.indexOf(st.motivo) >= 0 && !st.nota.trim()) { actualizarNota(); UI.toast("Escribí el mensaje antes de enviarlo", "bad"); notaEl.focus(); return; }
+      // Si el motivo es "Monto no coincide": validamos los importes reales, calculamos cuánto
+      // cambia el efectivo (entrega: le sobra lo que no dio; retiro: le falta/sobra lo que cobró
+      // de más o de menos) y lo sumamos al ajuste que ya tuviera cargado esa moneda.
+      var cambiosMonto = [], resumenMonto = "";
+      if (st.motivo === "Monto no coincide" && montoFilas.length) {
+        var porMoneda = {}, difs = [];
+        for (var i = 0; i < montoFilas.length; i++) {
+          var f = montoFilas[i];
+          var r = Motor.parsearImporte(f.inp.value, f.m.moneda, { cero: true });
+          if (r.error) { f.err.textContent = r.error; f.err.className = "ayuda err"; f.inp.classList.add("err"); return; }
+          f.err.textContent = ""; f.inp.classList.remove("err");
+          var real = Motor.dec(r.valor);
+          if (real === f.plan) { continue; }
+          var delta = f.m.sentido === "entrega" ? (f.plan - real) : (real - f.plan);
+          porMoneda[f.m.moneda] = (porMoneda[f.m.moneda] || 0n) + delta;
+          difs.push("Real: " + Motor.fmtDinero(real, f.m.moneda) + " (plan " + Motor.fmtDinero(f.plan, f.m.moneda) + ")");
+        }
+        Object.keys(porMoneda).forEach(function (k) {
+          if (porMoneda[k] === 0n) { return; }
+          var previo = v.ajustes && v.ajustes[k] ? Motor.dec(v.ajustes[k]) : 0n;
+          cambiosMonto.push({ moneda: k, delta: Motor.aCanonico(previo + porMoneda[k], Motor.MONEDAS[k].dec) });
+        });
+        resumenMonto = difs.join(" · ");
+        if (!cambiosMonto.length && !st.nota.trim()) { UI.toast("Ingresá el monto real o contá qué pasó", "bad"); return; }
+      }
+      var notaFinal = st.nota + (resumenMonto ? (st.nota ? "\n" : "") + resumenMonto : "");
+      // "Monto no coincide" implica que la operación SÍ pasó (solo que por otro importe): si la
+      // parada todavía no estaba marcada, se completa acá mismo. Si no, el ajuste quedaría aplicado
+      // sobre un cálculo que todavía cuenta el monto planificado como pendiente, y mostraría un
+      // efectivo incorrecto hasta que se deslizara para completar por separado.
+      var completarAca = st.motivo === "Monto no coincide" && !st.fallida && p.estado !== "completada";
       await UI.conCarga(btn, async function () {
         try {
-          if (st.fallida) { await Datos.marcarParada(p.id, "fallida", st.motivo + (st.nota ? ": " + st.nota : "")); }
-          else { await Datos.reportarIncidente(p.id, st.motivo, st.nota); }
+          if (st.fallida) { await Datos.marcarParada(p.id, "fallida", st.motivo + (notaFinal ? ": " + notaFinal : "")); }
+          else if (completarAca) { await Datos.marcarParada(p.id, "completada"); await Datos.reportarIncidente(p.id, st.motivo, notaFinal); }
+          else { await Datos.reportarIncidente(p.id, st.motivo, notaFinal); }
+          for (var j = 0; j < cambiosMonto.length; j++) { await Datos.ajustarEncima(v.id, cambiosMonto[j].moneda, cambiosMonto[j].delta); }
           var wa = S.config && S.config.admin_whatsapp;
-          var txt = "⚠️ " + st.motivo + "\n" + S.perfil.nombre + " · parada " + p.orden + "\nCliente: " + p.cliente_nombre + "\n" + p.direccion + (st.nota ? "\n\n" + st.nota : "") + (st.fallida ? "\n\n❌ No se pudo completar" : "") + (S.pos ? "\n📍 https://maps.google.com/?q=" + S.pos.lat.toFixed(5) + "," + S.pos.lng.toFixed(5) : "");
+          var txt = "⚠️ " + st.motivo + "\n" + S.perfil.nombre + " · parada " + p.orden + "\nCliente: " + p.cliente_nombre + "\n" + p.direccion + (notaFinal ? "\n\n" + notaFinal : "") + (st.fallida ? "\n\n❌ No se pudo completar" : "") + (S.pos ? "\n📍 https://maps.google.com/?q=" + S.pos.lat.toFixed(5) + "," + S.pos.lng.toFixed(5) : "");
           sh.cerrar();
           wa = String(wa || "").replace(/\D/g, ""); if (wa) { location.href = "https://wa.me/" + wa + "?text=" + encodeURIComponent(txt); }
           UI.toast("Problema registrado" + (wa ? "" : ". El administrador lo ve en su pantalla."), "info");
-          if (st.fallida) { await cargar(); var n = paradasDe(v).find(function (x) { return x.estado === "asignada"; }); if (n) { await Datos.marcarParada(n.id, "en_camino").catch(function () {}); } }
+          if (st.fallida || completarAca) { await cargar(); var n = paradasDe(v).find(function (x) { return x.estado === "asignada"; }); if (n) { await Datos.marcarParada(n.id, "en_camino").catch(function () {}); } }
           await cargar(); pintar();
         } catch (e) { UI.toast(UI.mensajeError(e), "bad"); }
       });
