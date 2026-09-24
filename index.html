@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Ruta">
 <meta name="robots" content="noindex,nofollow">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-1TkZ6HGmp30mJeiBX/C3/AXn185GQnDQBtPVYsaHBF8=' https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://tiles.openfreemap.org; worker-src blob:; child-src blob:; connect-src 'self' https://hgwnclqscytyozqkccro.supabase.co wss://hgwnclqscytyozqkccro.supabase.co https://tiles.openfreemap.org https://dolarapi.com https://api.bluelytics.com.ar https://photon.komoot.io https://router.project-osrm.org https://servicios.usig.buenosaires.gob.ar https://apis.datos.gob.ar https://nominatim.openstreetmap.org; base-uri 'none'; form-action 'self'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Ivy6ci7pkhfxzfuPdpCbpP9z9BO8SbRNZzs1p/IqAcg=' https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://tiles.openfreemap.org; worker-src blob:; child-src blob:; connect-src 'self' https://hgwnclqscytyozqkccro.supabase.co wss://hgwnclqscytyozqkccro.supabase.co https://tiles.openfreemap.org https://dolarapi.com https://api.bluelytics.com.ar https://photon.komoot.io https://router.project-osrm.org https://servicios.usig.buenosaires.gob.ar https://apis.datos.gob.ar https://nominatim.openstreetmap.org; base-uri 'none'; form-action 'self'; object-src 'none'">
 <meta name="description" content="Logística de traslados: rutas, repartidores y seguimiento en vivo.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icono.svg" type="image/svg+xml">
@@ -239,6 +239,9 @@ select.inp{appearance:none;padding-right:34px;background-image:url("data:image/s
 .pin-vivo::before,.pin-vivo::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:3px solid var(--c);animation:onda2 2s infinite}
 .pin-vivo::after{animation-delay:1s}
 @keyframes onda2{0%{transform:scale(1);opacity:.8}100%{transform:scale(2.2);opacity:0}}
+.pin-vivo.sin-senal{filter:grayscale(.55);opacity:.85}
+.pin-vivo.sin-senal::before{animation:none;opacity:0}
+.pin-vivo.sin-senal::after{inset:auto;right:-4px;top:-4px;width:13px;height:13px;border:2px solid #fff;background:var(--warn);box-shadow:0 0 0 2px var(--panel);animation:none;opacity:1}
 .pin-edit{width:26px;height:26px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(255,255,255,.95),0 10px 24px -6px var(--accent);cursor:grab}
 
 /* ---------- operación (vista mapa) ---------- */
@@ -1378,7 +1381,8 @@ var UI = (function () {
     auto: '<path d="M5 17h14M5 17a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm14 0a2 2 0 1 0 4 0 2 2 0 0 0-4 0z"/><path d="M3 17v-5l2-5h14l2 5v5"/>',
     info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
     usuario: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
-    copiar: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>'
+    copiar: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+    sinSenal: '<path d="M2 2l20 20"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M5 12.5a10.5 10.5 0 0 1 5-2.7M19 12.5a10.5 10.5 0 0 0-3.3-2.4"/><path d="M12 8a14 14 0 0 1 8.5 3.3M3.5 11.3A14 14 0 0 1 8 8.7"/><circle cx="12" cy="20" r="1.2" fill="currentColor"/>'
   };
   function ic(n, cls) {
     var s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -1866,6 +1870,30 @@ var Datos = (function () {
   }
   function alCambiarSesion(cb) { sb.auth.onAuthStateChange(function (ev, s) { yo = s ? s.user : null; if (ev === "SIGNED_OUT") { limpiarLocal(); } cb(ev, yo); }); }
   async function entrar(email, clave) { var r = await sb.auth.signInWithPassword({ email: email.trim(), password: clave }); chk(r); yo = r.data.user; return yo; }
+  /* ---------- acceso con teléfono + PIN (sin email) ----------
+     Por dentro la cuenta usa un email interno que nadie ve ni recibe: <tel>@tel.ruta.invalid.
+     Misma regla de teléfono que las funciones "registro" y "crear-repartidor". */
+  var DOM_TEL = "@tel.ruta.invalid";
+  function normTel(s) {
+    var d = String(s == null ? "" : s).replace(/\D/g, "");
+    if (d.indexOf("00") === 0) { d = d.slice(2); }
+    if (d.indexOf("549") === 0 && d.length >= 13) { d = d.slice(3); } else if (d.indexOf("54") === 0 && d.length >= 12) { d = d.slice(2); }
+    if (d.charAt(0) === "0") { d = d.slice(1); }
+    if (d.length === 12 && d.indexOf("1115") === 0) { d = "11" + d.slice(4); }
+    if (d.length === 10 && d.indexOf("15") === 0) { d = "11" + d.slice(2); }
+    return /^[1-9]\d{9}$/.test(d) ? d : null;
+  }
+  function esCuentaTel(u) { return !!(u && u.email && u.email.slice(-DOM_TEL.length) === DOM_TEL); }
+  async function entrarTel(tel, pin) {
+    var t = normTel(tel); if (!t) { throw new Error("Revisá el teléfono: con código de área, sin 0 ni 15 (ej.: 11 5555-5555)."); }
+    try { return await entrar(t + DOM_TEL, pin); }
+    catch (e) { if (/Invalid login/i.test(e && e.message)) { throw new Error("Teléfono o PIN incorrectos."); } throw e; }
+  }
+  async function registrarTel(codigo, nombre, tel, pin) {
+    await funcion("registro", { codigo: codigo, nombre: nombre, telefono: tel, pin: pin });
+    return entrarTel(tel, pin);
+  }
+  function cuentaTel() { return esCuentaTel(yo); }
   async function crearAdmin(nombre, email, clave, invitacion) {
     var datos = { nombre: nombre }; if (invitacion) { datos.invitacion = invitacion; }
     var r = await sb.auth.signUp({ email: email.trim(), password: clave, options: { data: datos, emailRedirectTo: location.origin + location.pathname } });
@@ -2023,7 +2051,7 @@ var Datos = (function () {
     resolverIncidente: resolverIncidente, guardarParada: guardarParada, cancelarParada: cancelarParada, aplicarPlan: aplicarPlan, guardarCotizacion: guardarCotizacion,
     auditoria: auditoria, crearRepartidor: crearRepartidor, cambiarClave: cambiarClave,
     planillas: planillas, planilla: planilla, guardarPlanilla: guardarPlanilla, borrarPlanilla: borrarPlanilla,
-    verInvitacion: verInvitacion, crearInvitacion: crearInvitacion, invitaciones: invitaciones, borrarInvitacion: borrarInvitacion,
+    verInvitacion: verInvitacion, normTel: normTel, entrarTel: entrarTel, registrarTel: registrarTel, cuentaTel: cuentaTel, crearInvitacion: crearInvitacion, invitaciones: invitaciones, borrarInvitacion: borrarInvitacion,
     misViajes: misViajes, iniciarViaje: iniciarViaje, finalizarViaje: finalizarViaje, finalizarViajeForzado: finalizarViajeForzado, ajustarEncima: ajustarEncima, marcarParada: marcarParada, reportarIncidente: reportarIncidente, reportarUbicacion: reportarUbicacion,
     escuchar: escuchar, cotizaciones: cotizaciones, cotizacionGuardada: cotizacionGuardada, buscarDireccion: buscarDireccion, direccionDe: direccionDe,
     coordsDeTexto: coordsDeTexto, matriz: matriz, geometria: geometria, usuario: function () { return yo; }
@@ -2146,14 +2174,18 @@ var Mapa = (function () {
       } else { api.baseM.setLngLat([b.lng, b.lat]); }
     };
     api.vivosSet = function (lista) {
-      var ok = {};
+      var ok = {}, UMBRAL_SIN_SENAL = 90000;
       (lista || []).forEach(function (v) {
         ok[v.id] = 1; var m = api.vivos[v.id];
         if (!m) {
           var el4 = h("div.pin-vivo", { title: v.nombre }, UI.iniciales(v.nombre));
           m = new maplibregl.Marker({ element: el4 }).setLngLat([v.lng, v.lat]).addTo(map); api.vivos[v.id] = m;
         } else { m.setLngLat([v.lng, v.lat]); }
-        m.getElement().style.setProperty("--c", v.color);
+        var vieja = v.en && (Date.now() - new Date(v.en).getTime()) > UMBRAL_SIN_SENAL;
+        var elm = m.getElement();
+        elm.style.setProperty("--c", v.color);
+        elm.classList.toggle("sin-senal", !!vieja);
+        elm.title = v.nombre + (vieja ? " · sin señal, última ubicación " + UI.hace(v.en) : "");
       });
       Object.keys(api.vivos).forEach(function (id) { if (!ok[id]) { api.vivos[id].remove(); delete api.vivos[id]; } });
     };
@@ -3291,6 +3323,16 @@ var A = (function () {
             h("span", "Nuevo fin estimado " + UI.hhmm(pr.fin) + " (el plan decía " + UI.hhmm(v.metricas.fin) + ")")),
             rep.telefono ? h("a.btn.sm", { href: "tel:" + rep.telefono, "aria-label": "Llamar a " + rep.nombre }, ic("telefono", "sm")) : null));
         });
+        S.viajes.forEach(function (v) {
+          if (v.estado !== "en_curso") { return; }
+          var u = S.ubic.find(function (x) { return x.repartidor_id === v.repartidor_id; });
+          var vieja = !u || (Date.now() - new Date(u.en).getTime()) > 90000;
+          if (!vieja) { return; }
+          var rep = A.repDe(v.repartidor_id) || {};
+          alertas.appendChild(h("div.alerta.warn.glass", ic("sinSenal"), h("div.t", h("b", (rep.nombre || "Un repartidor") + " sin señal"),
+            h("span", u ? "Última ubicación " + UI.hace(u.en) : "Todavía no reportó su ubicación en este recorrido")),
+            rep.telefono ? h("a.btn.sm", { href: "tel:" + rep.telefono, "aria-label": "Llamar a " + rep.nombre }, ic("telefono", "sm")) : null));
+        });
       }
       var excedidos = S.viajes.filter(function (v) { return v.estado !== "finalizado" && A.cargaViaje(v).usd > Motor.dec(A.tope()); });
       excedidos.forEach(function (v) {
@@ -3321,7 +3363,7 @@ var A = (function () {
           clase: [p.estado === "completada" ? "hecha" : "", p.estado === "fallida" ? "falla" : "", !v ? "libre" : "", tarde ? "tarde" : "", S.selViaje && p.viaje_id === S.selViaje ? "sel" : ""].join(" ").trim(),
           titulo: p.cliente_nombre + " · " + p.direccion, onClick: function () { A.editorParada(p); } };
       }));
-      mapa.vivosSet(S.ubic.map(function (u) { var r = A.repDe(u.repartidor_id); return { id: u.repartidor_id, lat: u.lat, lng: u.lng, color: r ? r.color : "#7B8CFF", nombre: r ? r.nombre : "" }; }));
+      mapa.vivosSet(S.ubic.map(function (u) { var r = A.repDe(u.repartidor_id); return { id: u.repartidor_id, lat: u.lat, lng: u.lng, color: r ? r.color : "#7B8CFF", nombre: r ? r.nombre : "", en: u.en }; }));
       // rutas
       var rutas = [];
       for (var i = 0; i < S.viajes.length; i++) {
@@ -3364,7 +3406,7 @@ var A = (function () {
     function actualizar() { pintarKPIs(); pintarViajes(); pintarAlertas(); pintarGraf(); if (S.cargado) { pintarMapa(false); } }
     actualizar();
     // cada 30 s se recalculan las horas estimadas con lo que va pasando
-    var t = setInterval(function () { if (!S.cargado) { return; } pintarKPIs(); pintarViajes(); pintarAlertas(); }, 30000);
+    var t = setInterval(function () { if (!S.cargado) { return; } pintarKPIs(); pintarViajes(); pintarAlertas(); pintarMapa(false); }, 30000);
     return { actualizar: actualizar, salir: function () { clearInterval(t); mapa.destruir(); }, retema: function () { mapa.retema(); } };
   };
 })();
@@ -4161,20 +4203,34 @@ var A = (function () {
       color: A.PALETA.find(function (c) { return usados.indexOf(c) < 0; }) || A.PALETA[0] };
     var ayudaRol = h("div.ayuda", ROLES[d.rol].d);
     var lblColor = h("label", d.rol === "repartidor" ? "Color en el mapa" : "Color");
-    var gen = function () { var a = "abcdefghjkmnpqrstuvwxyz23456789", s = ""; var r = new Uint32Array(10); crypto.getRandomValues(r); r.forEach(function (x) { s += a[x % a.length]; }); return s; };
+    var lblClave = h("label", "PIN"), ayudaClave = h("div.ayuda");
+    function pintarAyudaClave() {
+      var conEmail = !!d.email.trim(); lblClave.textContent = conEmail ? "Contraseña" : "PIN";
+      ayudaClave.textContent = conEmail ? "Mínimo 8 caracteres. Pasásela por un medio seguro." : "6 números. Pasáselo por un medio seguro; después lo puede cambiar el administrador.";
+    }
+    pintarAyudaClave();
+    var gen = function () {
+      var r = new Uint32Array(10), s = ""; crypto.getRandomValues(r);
+      if (!d.email.trim()) { for (var k = 0; k < 6; k++) { s += String(r[k] % 10); } return s; }
+      var a = "abcdefghjkmnpqrstuvwxyz23456789"; r.forEach(function (x) { s += a[x % a.length]; }); return s;
+    };
     var inpClave = h("input.inp.mono", { value: "", oninput: function (e) { d.clave = e.target.value; } });
     var btn = h("button.btn.pri", { onclick: crear }, ic("check", "sm"), "Crear");
-    var m = UI.modal([h("div.mb", h("h3", "Agregar a alguien al equipo"), h("p", "Entra con este email y contraseña. Podés cambiarle el rol cuando quieras."),
+    var m = UI.modal([h("div.mb", h("h3", "Agregar a alguien al equipo"), h("p", "Sin email: entra con su teléfono y un PIN de 6 números. Con email: con email y contraseña. Podés cambiarle el rol cuando quieras."),
       h("div", { style: { display: "flex", flexDirection: "column", gap: "12px", marginTop: "16px" } },
         h("div.campo", h("label", "Rol"), selectorRol(d.rol, function (k) { d.rol = k; UI.reemplazar(ayudaRol, ROLES[k].d); lblColor.textContent = k === "repartidor" ? "Color en el mapa" : "Color"; }), ayudaRol),
         h("div.campo", h("label", "Nombre"), h("input.inp", { autofocus: true, oninput: function (e) { d.nombre = e.target.value; } })),
-        h("div.campo", h("label", "Email"), h("input.inp", { type: "email", autocomplete: "off", oninput: function (e) { d.email = e.target.value; } })),
-        h("div.campo", h("label", "Contraseña"), h("div", { style: { display: "flex", gap: "8px" } }, inpClave, h("button.btn", { type: "button", onclick: function () { d.clave = gen(); inpClave.value = d.clave; } }, "Generar")), h("div.ayuda", "Mínimo 8 caracteres. Pasásela por un medio seguro.")),
-        h("div.campo", h("label", "Teléfono (para llamarlo)"), h("input.inp", { type: "tel", oninput: function (e) { d.telefono = e.target.value; } })),
+        h("div.campo", h("label", "Teléfono"), h("input.inp", { type: "tel", placeholder: "11 5555-5555", oninput: function (e) { d.telefono = e.target.value; } }), h("div.ayuda", "Con código de área, sin 0 ni 15. Si no le cargás email, entra con este teléfono.")),
+        h("div.campo", h("label", "Email (opcional)"), h("input.inp", { type: "email", autocomplete: "off", oninput: function (e) { d.email = e.target.value; pintarAyudaClave(); } })),
+        h("div.campo", lblClave, h("div", { style: { display: "flex", gap: "8px" } }, inpClave, h("button.btn", { type: "button", onclick: function () { d.clave = gen(); inpClave.value = d.clave; } }, "Generar")), ayudaClave),
         h("div.campo", lblColor, selectorColor(d)))),
       h("div.mp", h("button.btn.ghost", { onclick: function () { m.cerrar(); } }, "Cancelar"), btn)]);
     async function crear() {
       if (!d.nombre.trim()) { UI.toast("Falta el nombre", "bad"); return; }
+      if (!d.email.trim()) {
+        if (!Datos.normTel(d.telefono)) { UI.toast("Sin email hace falta el teléfono con código de área, sin 0 ni 15", "bad"); return; }
+        if (!/^\d{6}$/.test(d.clave)) { UI.toast("Sin email, el PIN tiene que ser de 6 números", "bad"); return; }
+      }
       await UI.conCarga(btn, async function () {
         try { await Datos.crearRepartidor(d); m.cerrar(); UI.toast(d.nombre.trim() + " ya puede entrar · " + ROLES[d.rol].t); await A.cargarBase(); if (S.vista === "equipo") { A.ir("equipo"); } }
         catch (e) { UI.toast(UI.mensajeError(e), "bad"); }
@@ -4186,10 +4242,10 @@ var A = (function () {
   function linkInvitacion(i) { return location.origin + location.pathname + "?inv=" + i.codigo; }
   function mostrarLink(i) {
     var link = linkInvitacion(i), rol = ROLES[i.rol] || ROLES.repartidor;
-    var txt = "Hola" + (i.nombre ? " " + i.nombre.split(" ")[0] : "") + "! Te invito a Ruta como " + rol.t.toLowerCase() + ". Creá tu cuenta desde este link (sirve una sola vez): " + link;
+    var txt = "Hola" + (i.nombre ? " " + i.nombre.split(" ")[0] : "") + "! Te invito a Ruta como " + rol.t.toLowerCase() + ". Entrá a este link y registrate con tu teléfono y un PIN (no hace falta email). Sirve una sola vez: " + link;
     var inp = h("input.inp.mono", { value: link, readonly: true, onfocus: function (e) { e.target.select(); } });
     var m = UI.modal([h("div.mb", h("h3", "Link de invitación listo"),
-      h("p", "Mandáselo a " + (i.nombre || "la persona") + ". Entra como ", h("b", rol.t), ". Sirve una sola vez y vence en 7 días; al registrarse confirma su email."),
+      h("p", "Mandáselo a " + (i.nombre || "la persona") + ". Entra como ", h("b", rol.t), ". Sirve una sola vez y vence en 7 días. Se registra con su teléfono y un PIN de 6 números, sin email."),
       h("div", { style: { display: "flex", gap: "8px", marginTop: "14px" } }, inp,
         h("button.btn", { type: "button", onclick: async function () { try { await navigator.clipboard.writeText(link); UI.toast("Link copiado"); } catch (e) { inp.select(); document.execCommand("copy"); UI.toast("Link copiado"); } } }, ic("copiar", "sm"), "Copiar")),
       h("a.btn.pri.lg.block", { href: "https://wa.me/?text=" + encodeURIComponent(txt), target: "_blank", rel: "noopener", style: { marginTop: "12px", background: "#25D366", color: "#052e16", boxShadow: "none" } }, ic("wa", "sm"), "Mandar por WhatsApp")),
@@ -4215,7 +4271,7 @@ var A = (function () {
   function editarPersona(r) {
     var d = { nombre: r.nombre, telefono: r.telefono || "", color: r.color, activo: r.activo, rol: r.rol };
     var yo = soyYo(r), ultimo = r.rol === "admin" && r.activo && !otrosAdmins(r.id).length;
-    var clave = h("input.inp.mono", { placeholder: "Nueva contraseña (opcional)", autocomplete: "new-password" });
+    var clave = h("input.inp.mono", { placeholder: "Nuevo PIN o contraseña (opcional)", autocomplete: "new-password" });
     var sw = h("button.switch", { role: "switch", disabled: ultimo, "aria-checked": d.activo ? "true" : "false", onclick: function () { if (ultimo) { return; } d.activo = !d.activo; sw.setAttribute("aria-checked", d.activo ? "true" : "false"); } });
     var ayudaRol = h("div.ayuda", ultimo
       ? "Es el único administrador activo, así que no puede cambiar de rol ni desactivarse. Para traspasar la administración, primero dale el rol de administrador a otra persona."
@@ -4229,7 +4285,7 @@ var A = (function () {
         h("div.campo", h("label", "Nombre"), h("input.inp", { value: d.nombre, oninput: function (e) { d.nombre = e.target.value; } })),
         h("div.campo", h("label", "Teléfono"), h("input.inp", { type: "tel", value: d.telefono, oninput: function (e) { d.telefono = e.target.value; } })),
         h("div.campo", h("label", "Color en el mapa"), selectorColor(d)),
-        h("div.campo", h("label", "Cambiar contraseña"), clave, h("div.ayuda", "Dejalo vacío si no querés cambiarla.")),
+        h("div.campo", h("label", "Cambiar PIN o contraseña"), clave, h("div.ayuda", "Dejalo vacío si no querés cambiarla. Si entra con teléfono, es un PIN de 6 números.")),
         h("label", { style: { display: "flex", alignItems: "center", gap: "12px", fontWeight: 550, opacity: ultimo ? .55 : 1 } }, sw, "Activo (si lo desactivás, no puede entrar)"))),
       h("div.mp", h("button.btn.ghost", { onclick: function () { m.cerrar(); } }, "Cancelar"), btn)]);
     async function guardar() {
@@ -4646,7 +4702,7 @@ var R = (function () {
     UI.reemplazar(raiz, h("div.rp",
       h("header.rp-top", h("span.av", { style: { "--c": perfil.color } }, UI.iniciales(perfil.nombre)),
         h("div.t", h("b", "Hola, " + perfil.nombre.split(" ")[0]), h("small", UI.fechaSub(UI.hoyISO()))), tema,
-        h("button.btn.ghost.icon", { "aria-label": "Salir", onclick: async function () { if (await UI.confirmar("¿Cerrar sesión?", "Para volver vas a necesitar tu email y contraseña.", { si: "Salir" })) { await Datos.salir(); location.reload(); } } }, ic("salir"))),
+        h("button.btn.ghost.icon", { "aria-label": "Salir", onclick: async function () { if (await UI.confirmar("¿Cerrar sesión?", Datos.cuentaTel() ? "Para volver vas a necesitar tu teléfono y tu PIN." : "Para volver vas a necesitar tu email y contraseña.", { si: "Salir" })) { await Datos.salir(); location.reload(); } } }, ic("salir"))),
       mapaEl, cont));
     pintar();
     try { S.config = await Datos.config(); await cargar(); } catch (e) { UI.toast(UI.mensajeError(e), "bad"); S.cargado = true; }
@@ -4662,9 +4718,15 @@ var R = (function () {
     if (activo && S.geoId == null) {
       S.geoId = navigator.geolocation.watchPosition(function (p) {
         S.pos = { lat: p.coords.latitude, lng: p.coords.longitude, en: new Date().toISOString() };
+        S.posPrec = p.coords.accuracy;
         if (S.mapa) { S.mapa.vivosSet([{ id: "yo", lat: S.pos.lat, lng: S.pos.lng, color: S.perfil.color, nombre: S.perfil.nombre }]); }
         if (Date.now() - S.ultEnvio > 20000) { S.ultEnvio = Date.now(); Datos.reportarUbicacion(S.pos.lat, S.pos.lng, p.coords.accuracy).catch(function () {}); }
       }, function () {}, { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 });
+      // apenas vuelve la conexión, mandamos la posición ya (no esperamos hasta 20s) para achicar el bache de "sin señal"
+      if (!S.alVolver) {
+        S.alVolver = function () { if (S.geoId != null && S.pos) { S.ultEnvio = Date.now(); Datos.reportarUbicacion(S.pos.lat, S.pos.lng, S.posPrec).catch(function () {}); } };
+        window.addEventListener("online", S.alVolver);
+      }
     } else if (!activo && S.geoId != null) { navigator.geolocation.clearWatch(S.geoId); S.geoId = null; }
   }
   async function pedirWake() {
@@ -5083,36 +5145,61 @@ var C = (function () {
     try { return sessionStorage.getItem("ruta-inv"); } catch (e) { return null; }
   }
   function olvidarInvitacion() { try { sessionStorage.removeItem("ruta-inv"); } catch (e) {} }
-  function pantallaLogin(modoAdmin, aviso) {
+  function modoGuardado() { try { return localStorage.getItem("ruta-login-modo") === "email" ? "email" : "tel"; } catch (e) { return "tel"; } }
+  function guardarModo(m) { try { localStorage.setItem("ruta-login-modo", m); } catch (e) {} }
+  function pantallaLogin(modoAdmin, aviso, modoPedido) {
     var inv = modoAdmin && typeof modoAdmin === "object" ? modoAdmin : null;
+    var primerAdmin = modoAdmin === true;
+    // Teléfono + PIN es lo normal (repartidores sin email). El primer administrador arranca con email.
+    var modo = primerAdmin ? "email" : (modoPedido || (inv ? "tel" : modoGuardado()));
+    var porTel = modo === "tel", alta = !!modoAdmin;
     var email = h("input.inp", { type: "email", autocomplete: "username", placeholder: "tu@email.com", required: true });
-    var clave = h("input.inp", { type: "password", autocomplete: modoAdmin ? "new-password" : "current-password", placeholder: modoAdmin ? "Mínimo 8 caracteres" : "••••••••", required: true });
+    var clave = h("input.inp", { type: "password", autocomplete: alta ? "new-password" : "current-password", placeholder: alta ? "Mínimo 8 caracteres" : "••••••••", required: true });
+    var tel = h("input.inp", { type: "tel", inputmode: "tel", autocomplete: alta ? "tel-national" : "username", placeholder: "11 5555-5555", required: true });
+    var pin = h("input.inp.mono", { type: "password", inputmode: "numeric", pattern: "[0-9]*", maxlength: "6", autocomplete: alta ? "new-password" : "current-password", placeholder: "6 números", required: true,
+      oninput: function () { pin.value = pin.value.replace(/\D/g, "").slice(0, 6); } });
     var nombre = h("input.inp", { placeholder: "Tu nombre", required: true, value: inv && inv.nombre ? inv.nombre : "" });
     var err = h("div.ayuda.err");
-    var btn = h("button.btn.pri.lg.block", { type: "submit" }, inv ? "Crear mi cuenta" : modoAdmin ? "Crear cuenta de administrador" : "Entrar", ic("flecha", "sm"));
-    var ver = h("button.btn.ghost.icon.sm", { type: "button", "aria-label": "Mostrar contraseña", style: { position: "absolute", right: "4px", top: "5px" }, onclick: function () { clave.type = clave.type === "password" ? "text" : "password"; } }, ic("ojo", "sm"));
+    var btn = h("button.btn.pri.lg.block", { type: "submit" }, inv ? "Crear mi cuenta" : primerAdmin ? "Crear cuenta de administrador" : "Entrar", ic("flecha", "sm"));
+    var campoSecreto = porTel ? pin : clave;
+    var ver = h("button.btn.ghost.icon.sm", { type: "button", "aria-label": porTel ? "Mostrar PIN" : "Mostrar contraseña", style: { position: "absolute", right: "4px", top: "5px" }, onclick: function () { campoSecreto.type = campoSecreto.type === "password" ? "text" : "password"; } }, ic("ojo", "sm"));
     var form = h("form", { onsubmit: async function (e) {
       e.preventDefault(); err.textContent = "";
-      if (modoAdmin && clave.value.length < 8) { err.textContent = "La contraseña necesita al menos 8 caracteres."; return; }
+      if (porTel) {
+        if (!Datos.normTel(tel.value)) { err.textContent = "Revisá el teléfono: con código de área, sin 0 ni 15 (ej.: 11 5555-5555)."; return; }
+        if (!/^\d{6}$/.test(pin.value)) { err.textContent = "El PIN es de 6 números."; return; }
+        if (inv && !nombre.value.trim()) { err.textContent = "Falta tu nombre."; return; }
+      } else if (alta && clave.value.length < 8) { err.textContent = "La contraseña necesita al menos 8 caracteres."; return; }
       await UI.conCarga(btn, async function () {
         try {
-          if (modoAdmin) {
+          if (porTel) {
+            if (inv) { await Datos.registrarTel(inv.codigo, nombre.value.trim(), tel.value, pin.value); olvidarInvitacion(); }
+            else { await Datos.entrarTel(tel.value, pin.value); }
+            guardarModo("tel"); await arrancar(); return;
+          }
+          if (alta) {
             var r = await Datos.crearAdmin(nombre.value.trim(), email.value, clave.value, inv ? inv.codigo : null);
             if (inv) { olvidarInvitacion(); }
             if (!r.session) { UI.reemplazar(form, h("div.vacio", h("div.ic", ic("mail", "lg")), h("b", "Revisá tu email"), h("span", "Mandamos un enlace a ", h("b", { style: { color: "var(--ink)" } }, email.value), " para confirmar la cuenta. Si no llega en un par de minutos, fijate en correo no deseado."), h("span", { style: { marginTop: "-4px" } }, "Después volvé acá y entrá con tu email y contraseña."), h("button.btn", { type: "button", onclick: function () { location.reload(); } }, ic("refrescar", "sm"), "Ya confirmé"))); return; }
             location.reload();
-          } else { await Datos.entrar(email.value, clave.value); await arrancar(); }
+          } else { await Datos.entrar(email.value, clave.value); guardarModo("email"); await arrancar(); }
         } catch (x) { err.textContent = UI.mensajeError(x); form.animate([{ transform: "translateX(0)" }, { transform: "translateX(-6px)" }, { transform: "translateX(6px)" }, { transform: "translateX(0)" }], { duration: 260 }); }
       });
     } },
       h("div.marca-f", { style: { alignItems: "center", gap: "10px", marginBottom: "18px" } }, h("div.logo", { style: { margin: 0 } }, UI.svgLogo()), h("b", { style: { fontSize: "17px", letterSpacing: "-.01em" } }, "Ruta")),
-      h("h1", inv ? "Te invitaron a Ruta" : modoAdmin ? "Configurá tu cuenta" : "Bienvenido"),
-      h("p.sub", inv ? "Vas a entrar como " + (ROL_TXT[inv.rol] || inv.rol) + ". Creá tu cuenta con tu email y una contraseña que elijas." : modoAdmin ? "Es el primer ingreso, así que esta cuenta arranca como administradora. Después podés sumar al resto del equipo y pasarle la administración a quien corresponda." : "Entrá con el email y la contraseña que te dieron."),
+      h("h1", inv ? "Te invitaron a Ruta" : primerAdmin ? "Configurá tu cuenta" : "Bienvenido"),
+      h("p.sub", inv ? "Vas a entrar como " + (ROL_TXT[inv.rol] || inv.rol) + ". " + (porTel ? "Solo tu nombre, tu teléfono y un PIN de 6 números que elijas. No hace falta email." : "Creá tu cuenta con tu email y una contraseña que elijas.")
+        : primerAdmin ? "Es el primer ingreso, así que esta cuenta arranca como administradora. Después podés sumar al resto del equipo y pasarle la administración a quien corresponda."
+        : porTel ? "Entrá con tu teléfono y tu PIN." : "Entrá con el email y la contraseña que te dieron."),
       aviso ? h("div.nota", { style: { marginBottom: "14px" } }, ic("info", "sm"), h("div", h("span", aviso))) : null,
-      modoAdmin ? h("div.campo", h("label", "Nombre"), nombre) : null,
-      h("div.campo", h("label", "Email"), h("div.inp-ico", ic("mail", "sm"), email)),
-      h("div.campo", h("label", "Contraseña"), h("div.inp-ico", { style: { position: "relative" } }, ic("candado", "sm"), clave, ver)),
+      alta ? h("div.campo", h("label", "Nombre"), nombre) : null,
+      porTel ? h("div.campo", h("label", "Teléfono"), h("div.inp-ico", ic("telefono", "sm"), tel), inv ? h("div.ayuda", "Con código de área, sin 0 ni 15.") : null)
+        : h("div.campo", h("label", "Email"), h("div.inp-ico", ic("mail", "sm"), email)),
+      porTel ? h("div.campo", h("label", inv ? "Elegí un PIN" : "PIN"), h("div.inp-ico", { style: { position: "relative" } }, ic("candado", "sm"), pin, ver), inv ? h("div.ayuda", "6 números que te acuerdes. Con esto vas a entrar siempre.") : null)
+        : h("div.campo", h("label", "Contraseña"), h("div.inp-ico", { style: { position: "relative" } }, ic("candado", "sm"), clave, ver)),
       err, btn,
+      !primerAdmin ? h("button.btn.ghost.block", { type: "button", onclick: function () { pantallaLogin(modoAdmin, aviso, porTel ? "email" : "tel"); } },
+        porTel ? (inv ? "Prefiero usar email" : "Entrar con email") : (inv ? "Registrarme con mi teléfono" : "Entrar con teléfono")) : null,
       inv ? h("button.btn.ghost.block", { type: "button", onclick: function () { olvidarInvitacion(); pantallaLogin(false); } }, "Ya tengo cuenta: entrar") : null,
       h("div.ayuda", { style: { display: "flex", alignItems: "center", gap: "8px", marginTop: "6px" } }, ic("escudo", "sm"), "Acceso privado. Cada persona ve solo lo que le corresponde."));
     UI.reemplazar(raiz, h("div.login",
@@ -5121,7 +5208,7 @@ var C = (function () {
           h("p", "Rutas calculadas por tiempo real de manejo y por la plata que se lleva encima en cada tramo. Seguimiento en vivo y navegación con un toque."),
           h("div.feats", h("span", ic("rayo", "sm"), "Rutas en segundos"), h("span", ic("escudo", "sm"), "Tope por traslado"), h("span", ic("vivo", "sm"), "En vivo")))),
       h("section.login-f", form)));
-    setTimeout(function () { (modoAdmin ? nombre : email).focus(); }, 80);
+    setTimeout(function () { (alta && !nombre.value ? nombre : porTel ? tel : email).focus(); }, 80);
   }
 
   function pantallaCarga(txt) {
@@ -5154,7 +5241,7 @@ var C = (function () {
         var v = await Datos.verInvitacion(cod).catch(function () { return null; });
         if (v && v.valida) { pantallaLogin({ codigo: cod, rol: v.rol, nombre: v.nombre }); return; }
         olvidarInvitacion();
-        pantallaLogin(false, "Ese link de invitación ya se usó o venció. Si ya creaste tu cuenta, entrá con tu email y contraseña; si no, pedile uno nuevo al administrador.");
+        pantallaLogin(false, "Ese link de invitación ya se usó o venció. Si ya creaste tu cuenta, entrá con tu teléfono y PIN; si no, pedile uno nuevo al administrador.");
         return;
       }
       var hay = await Datos.hayAdmin().catch(function () { return true; });
