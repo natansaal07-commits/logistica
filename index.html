@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Ruta">
 <meta name="robots" content="noindex,nofollow">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Ivy6ci7pkhfxzfuPdpCbpP9z9BO8SbRNZzs1p/IqAcg=' https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://tiles.openfreemap.org; worker-src blob:; child-src blob:; connect-src 'self' https://hgwnclqscytyozqkccro.supabase.co wss://hgwnclqscytyozqkccro.supabase.co https://tiles.openfreemap.org https://dolarapi.com https://api.bluelytics.com.ar https://photon.komoot.io https://router.project-osrm.org https://servicios.usig.buenosaires.gob.ar https://apis.datos.gob.ar https://nominatim.openstreetmap.org; base-uri 'none'; form-action 'self'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-ptXu0Dl8v9y4lvjEc0NcDIy8mU1t5ZGhFaQN6Nz3CMU=' https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://tiles.openfreemap.org; worker-src blob:; child-src blob:; connect-src 'self' https://hgwnclqscytyozqkccro.supabase.co wss://hgwnclqscytyozqkccro.supabase.co https://tiles.openfreemap.org https://dolarapi.com https://api.bluelytics.com.ar https://photon.komoot.io https://router.project-osrm.org https://servicios.usig.buenosaires.gob.ar https://apis.datos.gob.ar https://nominatim.openstreetmap.org; base-uri 'none'; form-action 'self'; object-src 'none'">
 <meta name="description" content="Logística de traslados: rutas, repartidores y seguimiento en vivo.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icono.svg" type="image/svg+xml">
@@ -242,6 +242,10 @@ select.inp{appearance:none;padding-right:34px;background-image:url("data:image/s
 .pin-vivo.sin-senal{filter:grayscale(.55);opacity:.85}
 .pin-vivo.sin-senal::before{animation:none;opacity:0}
 .pin-vivo.sin-senal::after{inset:auto;right:-4px;top:-4px;width:13px;height:13px;border:2px solid #fff;background:var(--warn);box-shadow:0 0 0 2px var(--panel);animation:none;opacity:1}
+.pin-tramo{display:flex;align-items:center;gap:5px;padding:4px 9px 4px 7px;border-radius:999px;background:var(--panel);color:var(--warn);font:600 11px var(--font);white-space:nowrap;
+  border:1px solid color-mix(in oklab,var(--warn) 45%,transparent);box-shadow:0 6px 18px -6px rgba(0,0,0,.5)}
+.rp-senal{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:8px;padding:8px 14px;background:color-mix(in oklab,var(--warn) 18%,var(--panel));color:var(--ink);font:500 12.5px var(--font);border-bottom:1px solid color-mix(in oklab,var(--warn) 40%,transparent)}
+.rp-senal>svg{color:var(--warn);flex:none}
 .pin-edit{width:26px;height:26px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(255,255,255,.95),0 10px 24px -6px var(--accent);cursor:grab}
 
 /* ---------- operación (vista mapa) ---------- */
@@ -1874,6 +1878,9 @@ var Datos = (function () {
      Por dentro la cuenta usa un email interno que nadie ve ni recibe: <tel>@tel.ruta.invalid.
      Misma regla de teléfono que las funciones "registro" y "crear-repartidor". */
   var DOM_TEL = "@tel.ruta.invalid";
+  // Administradores: nunca PIN. Contraseña de 12+ con letras y números (misma regla que crear-repartidor).
+  function claveFuerte(s) { s = String(s || ""); return s.length >= 12 && /[A-Za-z]/.test(s) && /\d/.test(s); }
+  var MSG_CLAVE_ADMIN = "La contraseña de un administrador necesita 12 caracteres o más, con letras y números.";
   function normTel(s) {
     var d = String(s == null ? "" : s).replace(/\D/g, "");
     if (d.indexOf("00") === 0) { d = d.slice(2); }
@@ -1969,10 +1976,42 @@ var Datos = (function () {
   async function iniciarViaje(id) { return chk(await sb.rpc("iniciar_viaje", { p_viaje: id })); }
   async function finalizarViaje(id) { return chk(await sb.rpc("finalizar_viaje", { p_viaje: id })); }
   async function finalizarViajeForzado(id) { return chk(await sb.rpc("finalizar_viaje_forzado", { p_viaje: id })); }
-  async function ajustarEncima(viajeId, moneda, delta) { return chk(await sb.rpc("ajustar_encima", { p_viaje: viajeId, p_moneda: moneda, p_delta: delta })); }
+  // delta se SUMA al ajuste en el servidor; fijar=true (solo admin) deja ese valor exacto.
+  async function ajustarEncima(viajeId, moneda, delta, fijar) { return chk(await sb.rpc("ajustar_encima", { p_viaje: viajeId, p_moneda: moneda, p_delta: delta, p_fijar: !!fijar })); }
+  // Estado (completada/fallida/null) + incidente + ajustes de efectivo {moneda: delta} en una transacción.
+  async function resolverParada(id, estado, motivo, nota, ajustes) { return chk(await sb.rpc("resolver_parada", { p_id: id, p_estado: estado || null, p_motivo: motivo, p_nota: nota || null, p_ajustes: ajustes || {} })); }
   async function marcarParada(id, estado, nota) { return chk(await sb.rpc("marcar_parada", { p_id: id, p_estado: estado, p_nota: nota || null })); }
   async function reportarIncidente(parada, motivo, nota) { return chk(await sb.rpc("reportar_incidente", { p_parada: parada, p_motivo: motivo, p_nota: nota || null })); }
   async function reportarUbicacion(lat, lng, prec) { return chk(await sb.rpc("reportar_ubicacion", { p_lat: lat, p_lng: lng, p_prec: prec || null })); }
+  // Lote de puntos [{lat,lng,prec,en,sin_senal}]: los que se guardaron sin conexión van con sin_senal=true y su hora real.
+  async function reportarUbicaciones(puntos) { return chk(await sb.rpc("reportar_ubicaciones", { p_puntos: puntos })); }
+  // Tramos recuperados sin señal de los viajes dados (admin): solo los puntos que llegaron tarde.
+  async function historialSinSenal(viajeIds) {
+    if (!viajeIds || !viajeIds.length) { return []; }
+    return chk(await sb.from("ubicaciones_hist").select("viaje_id,repartidor_id,lat,lng,en").in("viaje_id", viajeIds).eq("sin_senal", true).order("en").limit(5000));
+  }
+  /* ---------- cola local de ubicaciones (IndexedDB) ----------
+     Mientras el celular no tiene conexión, cada posición se guarda acá con su hora; al volver
+     la señal se mandan todas juntas (reportarUbicaciones). Si IndexedDB no está, se usa memoria. */
+  var colaMem = [], idb = null;
+  function abrirIDB() {
+    if (idb) { return idb; }
+    idb = new Promise(function (res) {
+      try {
+        var r = indexedDB.open("ruta-ubic", 1);
+        r.onupgradeneeded = function () { r.result.createObjectStore("pendientes", { keyPath: "en" }); };
+        r.onsuccess = function () { res(r.result); }; r.onerror = function () { res(null); }; r.onblocked = function () { res(null); };
+      } catch (e) { res(null); }
+    });
+    return idb;
+  }
+  function tx(db, modo, fn) { return new Promise(function (res, rej) { var t = db.transaction("pendientes", modo), st = t.objectStore("pendientes"), out = fn(st); t.oncomplete = function () { res(out && out.result !== undefined ? out.result : out); }; t.onerror = function () { rej(t.error); }; t.onabort = function () { rej(t.error); }; }); }
+  var colaUbic = {
+    guardar: async function (p) { var db = await abrirIDB(); if (!db) { colaMem.push(p); if (colaMem.length > 5000) { colaMem.shift(); } return; } try { await tx(db, "readwrite", function (st) { st.put(p); }); } catch (e) { colaMem.push(p); } },
+    todos: async function () { var db = await abrirIDB(); var l = colaMem.slice(); if (db) { try { var r = await tx(db, "readonly", function (st) { return st.getAll(); }); l = l.concat(r || []); } catch (e) {} } return l.sort(function (a, b) { return a.en < b.en ? -1 : 1; }); },
+    borrar: async function (puntos) { var ens = {}; puntos.forEach(function (p) { ens[p.en] = 1; }); colaMem = colaMem.filter(function (p) { return !ens[p.en]; }); var db = await abrirIDB(); if (db) { try { await tx(db, "readwrite", function (st) { Object.keys(ens).forEach(function (k) { st.delete(k); }); }); } catch (e) {} } },
+    cantidad: async function () { return (await colaUbic.todos()).length; }
+  };
 
   /* ---------- tiempo real ---------- */
   function escuchar(tablas, cb) {
@@ -2051,8 +2090,8 @@ var Datos = (function () {
     resolverIncidente: resolverIncidente, guardarParada: guardarParada, cancelarParada: cancelarParada, aplicarPlan: aplicarPlan, guardarCotizacion: guardarCotizacion,
     auditoria: auditoria, crearRepartidor: crearRepartidor, cambiarClave: cambiarClave,
     planillas: planillas, planilla: planilla, guardarPlanilla: guardarPlanilla, borrarPlanilla: borrarPlanilla,
-    verInvitacion: verInvitacion, normTel: normTel, entrarTel: entrarTel, registrarTel: registrarTel, cuentaTel: cuentaTel, crearInvitacion: crearInvitacion, invitaciones: invitaciones, borrarInvitacion: borrarInvitacion,
-    misViajes: misViajes, iniciarViaje: iniciarViaje, finalizarViaje: finalizarViaje, finalizarViajeForzado: finalizarViajeForzado, ajustarEncima: ajustarEncima, marcarParada: marcarParada, reportarIncidente: reportarIncidente, reportarUbicacion: reportarUbicacion,
+    verInvitacion: verInvitacion, normTel: normTel, claveFuerte: claveFuerte, MSG_CLAVE_ADMIN: MSG_CLAVE_ADMIN, entrarTel: entrarTel, registrarTel: registrarTel, cuentaTel: cuentaTel, crearInvitacion: crearInvitacion, invitaciones: invitaciones, borrarInvitacion: borrarInvitacion,
+    misViajes: misViajes, iniciarViaje: iniciarViaje, finalizarViaje: finalizarViaje, finalizarViajeForzado: finalizarViajeForzado, ajustarEncima: ajustarEncima, resolverParada: resolverParada, marcarParada: marcarParada, reportarIncidente: reportarIncidente, reportarUbicacion: reportarUbicacion, reportarUbicaciones: reportarUbicaciones, historialSinSenal: historialSinSenal, colaUbic: colaUbic,
     escuchar: escuchar, cotizaciones: cotizaciones, cotizacionGuardada: cotizacionGuardada, buscarDireccion: buscarDireccion, direccionDe: direccionDe,
     coordsDeTexto: coordsDeTexto, matriz: matriz, geometria: geometria, usuario: function () { return yo; }
   };
@@ -2087,11 +2126,11 @@ var Mapa = (function () {
 
   function crear(el, opts) {
     opts = opts || {};
-    var api = { el: el, map: null, marcas: {}, vivos: {}, baseM: null, _rutas: [], editable: null };
+    var api = { el: el, map: null, marcas: {}, vivos: {}, baseM: null, _rutas: [], _tramos: [], tramosM: [], editable: null };
     var listoRes; api.listo = new Promise(function (r) { listoRes = r; });
     if (!hayLib()) {
       el.appendChild(h("div.mapa-vacio", h("span", "Mapa no disponible sin conexión")));
-      ["paradas", "base", "vivosSet", "rutas", "encuadrar", "destruir", "pinEditable", "centrar", "resaltar"].forEach(function (k) { api[k] = function () {}; });
+      ["paradas", "base", "vivosSet", "rutas", "tramos", "encuadrar", "destruir", "pinEditable", "centrar", "resaltar"].forEach(function (k) { api[k] = function () {}; });
       listoRes(); return api;
     }
     var intento = 0, lista = ESTILOS[tema()];
@@ -2121,9 +2160,30 @@ var Mapa = (function () {
         paint: { "line-color": ["get", "color"], "line-width": ["interpolate", ["linear"], ["zoom"], 10, 3, 16, 6], "line-opacity": ["get", "op"] } });
       map.addLayer({ id: "rutas-flujo", type: "line", source: "rutas", filter: ["==", ["get", "activa"], true], layout: { "line-join": "round", "line-cap": "round" },
         paint: { "line-color": "#FFFFFF", "line-width": ["interpolate", ["linear"], ["zoom"], 10, 1.5, 16, 3], "line-opacity": 0.75, "line-dasharray": [0, 4, 3] } });
-      pintarRutas();
+      // Tramos recuperados sin señal: por dónde estuvo el repartidor mientras no tenía conexión.
+      map.addSource("tramos", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+      map.addLayer({ id: "tramos-borde", type: "line", source: "tramos", layout: { "line-join": "round", "line-cap": "round" },
+        paint: { "line-color": tema() === "dark" ? "#05070C" : "#FFFFFF", "line-width": ["interpolate", ["linear"], ["zoom"], 10, 5, 16, 9], "line-opacity": 0.8 } });
+      map.addLayer({ id: "tramos-linea", type: "line", source: "tramos", layout: { "line-join": "round", "line-cap": "round" },
+        paint: { "line-color": ["get", "color"], "line-width": ["interpolate", ["linear"], ["zoom"], 10, 3, 16, 5], "line-opacity": 0.95, "line-dasharray": [1.2, 1.6] } });
+      pintarRutas(); pintarTramos();
       animarFlujo();
     }
+    function pintarTramos() {
+      var src = map.getSource("tramos"); if (!src) { return; }
+      src.setData({ type: "FeatureCollection", features: api._tramos.filter(function (t) { return t.coords && t.coords.length > 1; }).map(function (t) {
+        return { type: "Feature", properties: { color: t.color || "#8A94A6" }, geometry: { type: "LineString", coordinates: t.coords } };
+      }) });
+      api.tramosM.forEach(function (m) { m.remove(); }); api.tramosM = [];
+      api._tramos.forEach(function (t) {
+        if (!t.coords || !t.coords.length) { return; }
+        var c = t.coords[Math.floor(t.coords.length / 2)];
+        var el6 = h("div.pin-tramo", { title: t.titulo || t.texto }, UI.ic("sinSenal", "sm"), h("span", t.texto));
+        api.tramosM.push(new maplibregl.Marker({ element: el6, anchor: "bottom", offset: [0, -6] }).setLngLat(c).addTo(map));
+      });
+    }
+    // [{ coords: [[lng,lat],…], color, texto: "sin señal de 10:12 a 10:31", titulo }]
+    api.tramos = function (lista) { api._tramos = lista || []; if (map.getSource("tramos")) { pintarTramos(); } };
     var paso = 0, DASH = [[0, 4, 3], [0.5, 4, 2.5], [1, 4, 2], [1.5, 4, 1.5], [2, 4, 1], [2.5, 4, 0.5], [3, 4, 0], [0, 0.5, 3, 3.5], [0, 1, 3, 3], [0, 1.5, 3, 2.5], [0, 2, 3, 2], [0, 2.5, 3, 1.5], [0, 3, 3, 1], [0, 3.5, 3, 0.5]];
     var anim;
     function animarFlujo() {
@@ -2772,7 +2832,7 @@ var A = (function () {
   var h = UI.h, ic = UI.ic;
   var PALETA = ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#1f9d1f", "#9085e9", "#e66767"];
   var S = {
-    perfil: null, config: null, fecha: UI.hoyISO(), paradas: [], viajes: [], perfiles: [], clientes: [], ubic: [], incidentes: [],
+    perfil: null, config: null, fecha: UI.hoyISO(), paradas: [], viajes: [], perfiles: [], clientes: [], ubic: [], incidentes: [], sinSenal: [],
     cot: Datos.cotizacionGuardada(), cotManual: null, cotEstado: "cargando", vista: "vivo", selViaje: null, cargado: false, rt: "…"
   };
   var vistas = {}, actual = null, raiz, cuerpo, topTitulo, cotBtn, fechaLbl;
@@ -2906,6 +2966,8 @@ var A = (function () {
     var desde = new Date(Date.now() - 2 * 864e5).toISOString();
     var r = await Promise.all([Datos.paradasDe(S.fecha), Datos.viajesDe(S.fecha), Datos.ubicaciones(), Datos.incidentes(desde)]);
     S.paradas = r[0]; S.viajes = r[1]; S.ubic = r[2]; S.incidentes = r[3]; S.cargado = true;
+    // puntos que llegaron tarde (guardados sin conexión) de los recorridos del día: tramos "sin señal" en Vivo
+    try { S.sinSenal = await Datos.historialSinSenal(S.viajes.filter(function (v) { return v.estado === "en_curso" || v.estado === "finalizado"; }).map(function (v) { return v.id; })); } catch (e) { S.sinSenal = []; }
   }
   async function refrescar() { try { await cargarDia(); actualizarBadges(); if (actual && actual.actualizar) { actual.actualizar(); } } catch (e) { UI.toast(UI.mensajeError(e), "bad"); } }
   var refrescarSuave = UI.debounce(refrescar, 350);
@@ -3297,7 +3359,7 @@ var A = (function () {
           if (!tocadoMon[k]) { continue; }
           var r2 = Motor.parsearImporte(filasEf[k].value, k, { cero: true }); if (r2.error) { continue; }
           var nuevoAjuste = Motor.dec(r2.valor) - (retCompl[k] || 0n);
-          await Datos.ajustarEncima(v.id, k, Motor.aCanonico(nuevoAjuste, Motor.MONEDAS[k].dec));
+          await Datos.ajustarEncima(v.id, k, Motor.aCanonico(nuevoAjuste, Motor.MONEDAS[k].dec), true);
         }
         UI.toast("Recorrido finalizado. " + pend.length + " parada" + (pend.length > 1 ? "s liberadas" : " liberada") + " para replanificar.");
         await A.refrescar();
@@ -3374,11 +3436,32 @@ var A = (function () {
         rutas.push({ id: v.id, color: A.colorRep(v.repartidor_id), coords: geos[clave].coords, activa: v.estado === "en_curso", dim: S.selViaje && S.selViaje !== v.id });
       }
       mapa.rutas(rutas);
+      mapa.tramos(tramosSinSenal());
       if (enfocar || (!encuadrado && pts.length)) {
         var foco = S.selViaje ? S.paradas.filter(function (p) { return p.viaje_id === S.selViaje; }) : pts;
         mapa.encuadrar(foco.concat(b && !S.selViaje ? [b] : []), innerWidth > 820 ? { top: alertas.children.length ? 170 : 70, bottom: 290, left: 450, right: 70 } : { top: 60, bottom: innerHeight * 0.5, left: 30, right: 30 });
         encuadrado = pts.length > 0;
       }
+    }
+
+    // Agrupa los puntos recuperados sin señal por viaje y en tramos (un corte de más de 3 min separa dos tramos).
+    function tramosSinSenal() {
+      var out = [], porViaje = {};
+      (S.sinSenal || []).forEach(function (u) { (porViaje[u.viaje_id] = porViaje[u.viaje_id] || []).push(u); });
+      Object.keys(porViaje).forEach(function (vid) {
+        var v = A.viajeDe(vid), rep = v ? A.repDe(v.repartidor_id) : null, pts = porViaje[vid].sort(function (a, b) { return a.en < b.en ? -1 : 1; });
+        var seg = [];
+        function cerrar() {
+          if (!seg.length) { return; }
+          var ini = seg[0].en, fin = seg[seg.length - 1].en;
+          out.push({ coords: seg.map(function (u) { return [u.lng, u.lat]; }), color: rep ? rep.color : "#8A94A6",
+            texto: "sin señal de " + UI.horaDe(ini) + " a " + UI.horaDe(fin), titulo: (rep ? rep.nombre + " · " : "") + "recorrido recuperado del celular: " + seg.length + " puntos, sin señal de " + UI.horaDe(ini) + " a " + UI.horaDe(fin) });
+          seg = [];
+        }
+        pts.forEach(function (u) { if (seg.length && new Date(u.en) - new Date(seg[seg.length - 1].en) > 3 * 60000) { cerrar(); } seg.push(u); });
+        cerrar();
+      });
+      return out;
     }
 
     function pintarGraf() {
@@ -3467,7 +3550,8 @@ var A = (function () {
 
     function pintarIzq() {
       var cands = candidatas(), disp = repsDisponibles();
-      if (!st.reps) { st.reps = disp.map(function (r) { return r.id; }); }
+      // Hasta que el admin toque un chip, la lista sigue a los disponibles (puede llegar vacía antes de cargar los perfiles).
+      if (!st.reps || st.repsAuto) { st.reps = disp.map(function (r) { return r.id; }); st.repsAuto = true; }
       if (!st.salida) { st.salida = salidaDefault(); }
       st.reps = st.reps.filter(function (id) { return disp.some(function (r) { return r.id === id; }); });
       var ent = 0n, ret = 0n; cands.forEach(function (p) { ent += A.usdParada(p, "entrega").usd; ret += A.usdParada(p, "retiro").usd; });
@@ -3480,7 +3564,7 @@ var A = (function () {
             var efTxt = A.textoEfectivoCorto(A.efectivoRepartidor(r.id));
             return h("button.rep-chip", { style: { "--c": r.color }, "aria-pressed": on ? "true" : "false",
               title: (ocupado ? "Tiene un recorrido en curso ahora. Este plan se le suma para después. " : "") + (efTxt ? "Tiene encima: " + efTxt : ""), onclick: function () {
-              if (on) { st.reps = st.reps.filter(function (x) { return x !== r.id; }); } else { st.reps.push(r.id); }
+              st.repsAuto = false; if (on) { st.reps = st.reps.filter(function (x) { return x !== r.id; }); } else { st.reps.push(r.id); }
               st.res = null; pintarTodo();
             } }, h("span.av.sm", { style: { "--c": r.color } }, UI.iniciales(r.nombre)), r.nombre.split(" ")[0] + (ocupado ? " · en ruta" : "") + (efTxt ? " · " + efTxt : ""));
           })) : h("div.ayuda.err", "No hay repartidores libres. ", h("a", { href: "#", onclick: function (e) { e.preventDefault(); A.ir("equipo"); } }, "Agregá uno"))),
@@ -3721,7 +3805,9 @@ var A = (function () {
     function pintarTodo(enfocar) { pintarIzq(); pintarTablero(); pintarMapa(enfocar); }
     pintarTodo(true);
     return {
-      actualizar: function () { if (!st.res && !st.calculando) { st.reps = null; st.salida = null; pintarTodo(true); } else { pintarIzq(); } },
+      // Llega con cada evento en vivo (ubicaciones cada 20 s): se repinta sin tocar los repartidores
+      // elegidos ni la hora de salida, y sin mover el mapa; pintarIzq saca solo a los que dejaron de estar disponibles.
+      actualizar: function () { if (!st.res && !st.calculando) { pintarTodo(false); } else { pintarIzq(); } },
       salir: function () { mapa.destruir(); }, retema: function () { mapa.retema(); }
     };
   };
@@ -4204,30 +4290,37 @@ var A = (function () {
     var ayudaRol = h("div.ayuda", ROLES[d.rol].d);
     var lblColor = h("label", d.rol === "repartidor" ? "Color en el mapa" : "Color");
     var lblClave = h("label", "PIN"), ayudaClave = h("div.ayuda");
+    var lblEmail = h("label", "Email (opcional)");
     function pintarAyudaClave() {
-      var conEmail = !!d.email.trim(); lblClave.textContent = conEmail ? "Contraseña" : "PIN";
-      ayudaClave.textContent = conEmail ? "Mínimo 8 caracteres. Pasásela por un medio seguro." : "6 números. Pasáselo por un medio seguro; después lo puede cambiar el administrador.";
+      var esAdmin = d.rol === "admin", conEmail = esAdmin || !!d.email.trim(); lblClave.textContent = conEmail ? "Contraseña" : "PIN";
+      lblEmail.textContent = esAdmin ? "Email" : "Email (opcional)";
+      ayudaClave.textContent = esAdmin ? "Un administrador entra siempre con email y contraseña fuerte: 12 o más, con letras y números." : conEmail ? "Mínimo 8 caracteres. Pasásela por un medio seguro." : "6 números. Pasáselo por un medio seguro; después lo puede cambiar el administrador.";
     }
     pintarAyudaClave();
     var gen = function () {
       var r = new Uint32Array(10), s = ""; crypto.getRandomValues(r);
-      if (!d.email.trim()) { for (var k = 0; k < 6; k++) { s += String(r[k] % 10); } return s; }
-      var a = "abcdefghjkmnpqrstuvwxyz23456789"; r.forEach(function (x) { s += a[x % a.length]; }); return s;
+      if (d.rol !== "admin" && !d.email.trim()) { for (var k = 0; k < 6; k++) { s += String(r[k] % 10); } return s; }
+      var a = "abcdefghjkmnpqrstuvwxyz23456789"; r.forEach(function (x) { s += a[x % a.length]; });
+      if (d.rol === "admin") { var r2 = new Uint32Array(4); crypto.getRandomValues(r2); r2.forEach(function (x) { s += a[x % a.length]; }); s += String(r2[0] % 10); }
+      return s;
     };
     var inpClave = h("input.inp.mono", { value: "", oninput: function (e) { d.clave = e.target.value; } });
     var btn = h("button.btn.pri", { onclick: crear }, ic("check", "sm"), "Crear");
     var m = UI.modal([h("div.mb", h("h3", "Agregar a alguien al equipo"), h("p", "Sin email: entra con su teléfono y un PIN de 6 números. Con email: con email y contraseña. Podés cambiarle el rol cuando quieras."),
       h("div", { style: { display: "flex", flexDirection: "column", gap: "12px", marginTop: "16px" } },
-        h("div.campo", h("label", "Rol"), selectorRol(d.rol, function (k) { d.rol = k; UI.reemplazar(ayudaRol, ROLES[k].d); lblColor.textContent = k === "repartidor" ? "Color en el mapa" : "Color"; }), ayudaRol),
+        h("div.campo", h("label", "Rol"), selectorRol(d.rol, function (k) { d.rol = k; UI.reemplazar(ayudaRol, ROLES[k].d); lblColor.textContent = k === "repartidor" ? "Color en el mapa" : "Color"; pintarAyudaClave(); }), ayudaRol),
         h("div.campo", h("label", "Nombre"), h("input.inp", { autofocus: true, oninput: function (e) { d.nombre = e.target.value; } })),
         h("div.campo", h("label", "Teléfono"), h("input.inp", { type: "tel", placeholder: "11 5555-5555", oninput: function (e) { d.telefono = e.target.value; } }), h("div.ayuda", "Con código de área, sin 0 ni 15. Si no le cargás email, entra con este teléfono.")),
-        h("div.campo", h("label", "Email (opcional)"), h("input.inp", { type: "email", autocomplete: "off", oninput: function (e) { d.email = e.target.value; pintarAyudaClave(); } })),
+        h("div.campo", lblEmail, h("input.inp", { type: "email", autocomplete: "off", oninput: function (e) { d.email = e.target.value; pintarAyudaClave(); } })),
         h("div.campo", lblClave, h("div", { style: { display: "flex", gap: "8px" } }, inpClave, h("button.btn", { type: "button", onclick: function () { d.clave = gen(); inpClave.value = d.clave; } }, "Generar")), ayudaClave),
         h("div.campo", lblColor, selectorColor(d)))),
       h("div.mp", h("button.btn.ghost", { onclick: function () { m.cerrar(); } }, "Cancelar"), btn)]);
     async function crear() {
       if (!d.nombre.trim()) { UI.toast("Falta el nombre", "bad"); return; }
-      if (!d.email.trim()) {
+      if (d.rol === "admin") {
+        if (!d.email.trim()) { UI.toast("Un administrador necesita email: no puede entrar con PIN", "bad"); return; }
+        if (!Datos.claveFuerte(d.clave)) { UI.toast(Datos.MSG_CLAVE_ADMIN, "bad"); return; }
+      } else if (!d.email.trim()) {
         if (!Datos.normTel(d.telefono)) { UI.toast("Sin email hace falta el teléfono con código de área, sin 0 ni 15", "bad"); return; }
         if (!/^\d{6}$/.test(d.clave)) { UI.toast("Sin email, el PIN tiene que ser de 6 números", "bad"); return; }
       }
@@ -4242,20 +4335,21 @@ var A = (function () {
   function linkInvitacion(i) { return location.origin + location.pathname + "?inv=" + i.codigo; }
   function mostrarLink(i) {
     var link = linkInvitacion(i), rol = ROLES[i.rol] || ROLES.repartidor;
-    var txt = "Hola" + (i.nombre ? " " + i.nombre.split(" ")[0] : "") + "! Te invito a Ruta como " + rol.t.toLowerCase() + ". Entrá a este link y registrate con tu teléfono y un PIN (no hace falta email). Sirve una sola vez: " + link;
+    var esAdmin = i.rol === "admin";
+    var txt = "Hola" + (i.nombre ? " " + i.nombre.split(" ")[0] : "") + "! Te invito a Ruta como " + rol.t.toLowerCase() + ". Entrá a este link y registrate " + (esAdmin ? "con tu email y una contraseña" : "con tu teléfono y un PIN (no hace falta email)") + ". Sirve una sola vez: " + link;
     var inp = h("input.inp.mono", { value: link, readonly: true, onfocus: function (e) { e.target.select(); } });
     var m = UI.modal([h("div.mb", h("h3", "Link de invitación listo"),
-      h("p", "Mandáselo a " + (i.nombre || "la persona") + ". Entra como ", h("b", rol.t), ". Sirve una sola vez y vence en 7 días. Se registra con su teléfono y un PIN de 6 números, sin email."),
+      h("p", "Mandáselo a " + (i.nombre || "la persona") + ". Entra como ", h("b", rol.t), ". Sirve una sola vez y vence en 7 días. " + (esAdmin ? "Se registra con su email y una contraseña fuerte (los administradores no usan PIN)." : "Se registra con su teléfono y un PIN de 6 números, sin email.")),
       h("div", { style: { display: "flex", gap: "8px", marginTop: "14px" } }, inp,
         h("button.btn", { type: "button", onclick: async function () { try { await navigator.clipboard.writeText(link); UI.toast("Link copiado"); } catch (e) { inp.select(); document.execCommand("copy"); UI.toast("Link copiado"); } } }, ic("copiar", "sm"), "Copiar")),
       h("a.btn.pri.lg.block", { href: "https://wa.me/?text=" + encodeURIComponent(txt), target: "_blank", rel: "noopener", style: { marginTop: "12px", background: "#25D366", color: "#052e16", boxShadow: "none" } }, ic("wa", "sm"), "Mandar por WhatsApp")),
       h("div.mp", h("button.btn.ghost", { onclick: function () { m.cerrar(); } }, "Listo"))]);
   }
   A.invitar = function (rolInicial) {
-    var d = { rol: ROLES[rolInicial] ? rolInicial : "admin", nombre: "" };
+    var d = { rol: ROLES[rolInicial] ? rolInicial : "repartidor", nombre: "" };
     var ayudaRol = h("div.ayuda", ROLES[d.rol].d);
     var btn = h("button.btn.pri", { onclick: crear }, ic("check", "sm"), "Crear link");
-    var m = UI.modal([h("div.mb", h("h3", "Invitar por link"), h("p", "La persona crea su cuenta con su propia contraseña y entra con el rol que elijas."),
+    var m = UI.modal([h("div.mb", h("h3", "Invitar por link"), h("p", "La persona crea su cuenta sola con su teléfono y un PIN. Si la invitás como administrador, se registra con email y contraseña fuerte."),
       h("div", { style: { display: "flex", flexDirection: "column", gap: "12px", marginTop: "16px" } },
         h("div.campo", h("label", "Rol"), selectorRol(d.rol, function (k) { d.rol = k; UI.reemplazar(ayudaRol, ROLES[k].d); }), ayudaRol),
         h("div.campo", h("label", "Nombre (opcional)"), h("input.inp", { placeholder: "Para reconocer la invitación", maxlength: 80, oninput: function (e) { d.nombre = e.target.value; } })))),
@@ -4285,7 +4379,7 @@ var A = (function () {
         h("div.campo", h("label", "Nombre"), h("input.inp", { value: d.nombre, oninput: function (e) { d.nombre = e.target.value; } })),
         h("div.campo", h("label", "Teléfono"), h("input.inp", { type: "tel", value: d.telefono, oninput: function (e) { d.telefono = e.target.value; } })),
         h("div.campo", h("label", "Color en el mapa"), selectorColor(d)),
-        h("div.campo", h("label", "Cambiar PIN o contraseña"), clave, h("div.ayuda", "Dejalo vacío si no querés cambiarla. Si entra con teléfono, es un PIN de 6 números.")),
+        h("div.campo", h("label", "Cambiar PIN o contraseña"), clave, h("div.ayuda", "Dejalo vacío si no querés cambiarla. Si entra con teléfono, es un PIN de 6 números. Un administrador: 12 o más, con letras y números.")),
         h("label", { style: { display: "flex", alignItems: "center", gap: "12px", fontWeight: 550, opacity: ultimo ? .55 : 1 } }, sw, "Activo (si lo desactivás, no puede entrar)"))),
       h("div.mp", h("button.btn.ghost", { onclick: function () { m.cerrar(); } }, "Cancelar"), btn)]);
     async function guardar() {
@@ -4311,7 +4405,7 @@ var A = (function () {
     UI.add(cont, h("div.scroll", h("div.pagina",
       h("div.titulo-pag", h("div", h("h2", "Equipo"), h("p", "Quién entra al sistema y con qué permisos.")), h("div.sp"),
         h("div", { style: { display: "flex", gap: "8px", flexWrap: "wrap" } },
-          h("button.btn", { onclick: function () { A.invitar("admin"); } }, ic("wa", "sm"), "Invitar por link"),
+          h("button.btn", { onclick: function () { A.invitar("repartidor"); } }, ic("wa", "sm"), "Invitar por link"),
           h("button.btn.pri", { onclick: function () { A.nuevaPersona("repartidor"); } }, ic("mas", "sm"), "Agregar persona"))),
       aviso, pendientes, grupos)));
     async function cargarPendientes() {
@@ -4626,7 +4720,8 @@ var A = (function () {
 var R = (function () {
   "use strict";
   var h = UI.h, ic = UI.ic;
-  var S = { perfil: null, config: null, viajes: [], paradas: [], cargado: false, mapa: null, pos: null, geoId: null, ultEnvio: 0, wake: null, mapaGrande: false };
+  var S = { perfil: null, config: null, viajes: [], paradas: [], cargado: false, mapa: null, pos: null, geoId: null, ultEnvio: 0, wake: null, mapaGrande: false, enviando: false, sinSenal: false, pendientes: 0 };
+  var INTERVALO_UBIC = window.__UBIC_MS || 20000; // cada cuánto se manda la posición (las pruebas lo acortan)
   var raiz, cont, mapaEl;
 
   function viajeActual() { return S.viajes.find(function (v) { return v.estado === "en_curso"; }) || S.viajes.find(function (v) { return v.estado === "asignado"; }) || S.viajes[S.viajes.length - 1]; }
@@ -4720,14 +4815,44 @@ var R = (function () {
         S.pos = { lat: p.coords.latitude, lng: p.coords.longitude, en: new Date().toISOString() };
         S.posPrec = p.coords.accuracy;
         if (S.mapa) { S.mapa.vivosSet([{ id: "yo", lat: S.pos.lat, lng: S.pos.lng, color: S.perfil.color, nombre: S.perfil.nombre }]); }
-        if (Date.now() - S.ultEnvio > 20000) { S.ultEnvio = Date.now(); Datos.reportarUbicacion(S.pos.lat, S.pos.lng, p.coords.accuracy).catch(function () {}); }
+        if (Date.now() - S.ultEnvio > INTERVALO_UBIC) { enviarUbicacion(); }
       }, function () {}, { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 });
-      // apenas vuelve la conexión, mandamos la posición ya (no esperamos hasta 20s) para achicar el bache de "sin señal"
+      // Envío periódico aunque el celular esté quieto (watchPosition no dispara si no se mueve):
+      // así el admin siempre tiene una posición fresca y, sin conexión, queda el rastro completo.
+      S.timerUbic = setInterval(function () { if (S.pos && Date.now() - S.ultEnvio >= INTERVALO_UBIC - 500) { enviarUbicacion(); } }, INTERVALO_UBIC);
+      // apenas vuelve la conexión, se manda todo lo acumulado (no esperamos hasta el próximo tick)
       if (!S.alVolver) {
-        S.alVolver = function () { if (S.geoId != null && S.pos) { S.ultEnvio = Date.now(); Datos.reportarUbicacion(S.pos.lat, S.pos.lng, S.posPrec).catch(function () {}); } };
+        S.alVolver = function () { if (S.geoId != null) { enviarUbicacion(); } };
         window.addEventListener("online", S.alVolver);
       }
-    } else if (!activo && S.geoId != null) { navigator.geolocation.clearWatch(S.geoId); S.geoId = null; }
+      enviarUbicacion();
+    } else if (!activo && S.geoId != null) { navigator.geolocation.clearWatch(S.geoId); S.geoId = null; clearInterval(S.timerUbic); }
+  }
+  /* Manda la posición actual + todo lo que quedó en la cola local. Si no hay conexión (o falla),
+     la posición se guarda en IndexedDB con su hora real y marcada "sin señal": nunca se pierde
+     por dónde estuvo. Al volver la conexión, sale todo junto y el admin ve el tramo recuperado. */
+  async function enviarUbicacion() {
+    if (!S.pos || S.enviando) { return; }
+    S.enviando = true; S.ultEnvio = Date.now();
+    var ahora = { lat: S.pos.lat, lng: S.pos.lng, prec: S.posPrec || null, en: new Date().toISOString(), sin_senal: false };
+    try {
+      var cola = await Datos.colaUbic.todos();
+      if (!navigator.onLine) { throw new Error("offline"); }
+      await Datos.reportarUbicaciones(cola.concat([ahora]));
+      if (cola.length) { await Datos.colaUbic.borrar(cola); }
+      S.pendientes = 0; if (S.sinSenal) { S.sinSenal = false; pintarSenal(); }
+    } catch (e) {
+      ahora.sin_senal = true; await Datos.colaUbic.guardar(ahora);
+      S.pendientes = await Datos.colaUbic.cantidad();
+      if (!S.sinSenal) { S.sinSenal = true; pintarSenal(); }
+    } finally { S.enviando = false; }
+  }
+  // Avisito discreto en la app del repartidor: "Sin conexión: guardando tu recorrido (N puntos)".
+  function pintarSenal() {
+    var el = document.querySelector(".rp-senal");
+    if (!S.sinSenal) { if (el) { el.remove(); } return; }
+    if (!el) { el = h("div.rp-senal", { role: "status" }, ic("sinSenal", "sm"), h("span")); (raiz || document.body).prepend(el); }
+    el.querySelector("span").textContent = "Sin conexión: tu recorrido se guarda en el celular y se manda al volver la señal" + (S.pendientes ? " (" + S.pendientes + ")" : "");
   }
   async function pedirWake() {
     var v = viajeActual(); if (!v || v.estado !== "en_curso" || !("wakeLock" in navigator)) { return; }
@@ -4781,7 +4906,9 @@ var R = (function () {
     seguir(v.estado === "en_curso");
 
     // hero
-    var enc = encima(v, ps), ef = efectivo(v, enc), monedas = Object.keys(enc).filter(function (k) { return enc[k] > 0n; });
+    // Se listan las monedas con efectivo REAL (calculado + ajuste): si el plan ya no cuenta nada pero
+    // el repartidor corrigió que le quedó plata, tiene que verla y poder seguir corrigiéndola.
+    var enc = encima(v, ps), ef = efectivo(v, enc), monedas = Object.keys(ef).filter(function (k) { return ef[k] !== 0n || (enc[k] || 0n) > 0n; });
     var pr = proy(v), fin = pr && pr.fin != null ? pr.fin : v.metricas && v.metricas.fin;
     var finEl = h("b", fin ? UI.hhmm(fin) : "—"), difEl = h("small", { style: { display: "block", fontSize: "11px", color: pr && pr.atrasoFin > 0 ? "var(--warn)" : "var(--ok)" } }, pr ? UI.atraso(pr.atrasoFin) : "");
     S.vivo = { v: v, finEl: finEl, difEl: difEl, items: [], proxEl: null, proxP: null };
@@ -4891,13 +5018,13 @@ var R = (function () {
   // Corregir cuánto llevás encima → guarda la diferencia contra lo calculado (no pisa
   // un valor fijo), y el administrador lo ve reflejado al toque en su pantalla.
   function corregirEncima(v, enc) {
-    var monedas = Object.keys(enc).filter(function (k) { return enc[k] > 0n; });
+    var efT = efectivo(v, enc), monedas = Object.keys(efT).filter(function (k) { return efT[k] !== 0n || (enc[k] || 0n) > 0n; });
     var filas = monedas.map(function (k) {
-      var ef = (enc[k] || 0n) + (v.ajustes && v.ajustes[k] ? Motor.dec(v.ajustes[k]) : 0n);
+      var ef = efT[k];
       var inp = h("input.inp.num", { value: Motor.fmtNum(ef, Motor.MONEDAS[k].dec).replace(/,00$/, ""), inputmode: "decimal", "aria-label": "Efectivo real en " + Motor.MONEDAS[k].nombre });
       var err = h("div.ayuda");
-      return { moneda: k, calc: enc[k], inp: inp, err: err,
-        el: h("div.campo", h("label", Motor.MONEDAS[k].nombre + " — el plan dice " + Motor.fmtDinero(enc[k], k)), inp, err) };
+      return { moneda: k, calc: enc[k] || 0n, inp: inp, err: err,
+        el: h("div.campo", h("label", Motor.MONEDAS[k].nombre + " — el plan dice " + Motor.fmtDinero(enc[k] || 0n, k)), inp, err) };
     });
     var btn = h("button.btn.pri.lg.block", { onclick: guardar }, ic("check", "sm"), "Guardar");
     var sh = UI.sheet([h("h3", { style: { margin: "0 0 4px", fontSize: "20px", letterSpacing: "-.02em" } }, "¿Cuánto llevás realmente?"),
@@ -4910,9 +5037,10 @@ var R = (function () {
         var r = Motor.parsearImporte(f.inp.value, f.moneda, { cero: true });
         if (r.error) { f.err.textContent = r.error; f.err.className = "ayuda err"; f.inp.classList.add("err"); ok = false; return; }
         f.err.textContent = ""; f.inp.classList.remove("err");
-        var delta = Motor.dec(r.valor) - f.calc;
+        // Delta contra el efectivo actual (calculado + ajuste previo): el servidor lo SUMA al ajuste.
         var previo = v.ajustes && v.ajustes[f.moneda] ? Motor.dec(v.ajustes[f.moneda]) : 0n;
-        if (delta !== previo) { cambios.push({ moneda: f.moneda, delta: Motor.aCanonico(delta, Motor.MONEDAS[f.moneda].dec) }); }
+        var delta = Motor.dec(r.valor) - (f.calc + previo);
+        if (delta !== 0n) { cambios.push({ moneda: f.moneda, delta: Motor.aCanonico(delta, Motor.MONEDAS[f.moneda].dec) }); }
       });
       if (!ok) { return; }
       if (!cambios.length) { sh.cerrar(); return; }
@@ -4947,7 +5075,7 @@ var R = (function () {
       montoFilas.map(function (f) { return f.el; })
     ) : null;
     function pintarM() {
-      UI.reemplazar(grid, MOT.map(function (m) { return h("button.motivo", { "aria-pressed": st.motivo === m[0] ? "true" : "false", onclick: function () { st.motivo = m[0]; if (m[0] === "Cliente ausente" || m[0] === "Dirección incorrecta") { st.fallida = true; sw.setAttribute("aria-checked", "true"); } pintarM(); actualizarNota(); } }, ic(m[1]), m[0]); }));
+      UI.reemplazar(grid, MOT.map(function (m) { return h("button.motivo", { "aria-pressed": st.motivo === m[0] ? "true" : "false", onclick: function () { st.motivo = m[0]; if (m[0] === "Cliente ausente" || m[0] === "Dirección incorrecta") { st.fallida = true; } else if (m[0] === "Monto no coincide") { st.fallida = false; } sw.setAttribute("aria-checked", st.fallida ? "true" : "false"); pintarM(); actualizarNota(); } }, ic(m[1]), m[0]); }));
       if (montosWrap) { montosWrap.style.display = st.motivo === "Monto no coincide" ? "" : "none"; }
     }
     var sw = h("button.switch", { role: "switch", "aria-checked": "false", onclick: function () { st.fallida = !st.fallida; sw.setAttribute("aria-checked", st.fallida ? "true" : "false"); } });
@@ -4987,10 +5115,10 @@ var R = (function () {
           porMoneda[f.m.moneda] = (porMoneda[f.m.moneda] || 0n) + delta;
           difs.push("Real: " + Motor.fmtDinero(real, f.m.moneda) + " (plan " + Motor.fmtDinero(f.plan, f.m.moneda) + ")");
         }
+        // Solo la diferencia: el servidor la suma al ajuste que ya hubiera (resolver_parada).
         Object.keys(porMoneda).forEach(function (k) {
           if (porMoneda[k] === 0n) { return; }
-          var previo = v.ajustes && v.ajustes[k] ? Motor.dec(v.ajustes[k]) : 0n;
-          cambiosMonto.push({ moneda: k, delta: Motor.aCanonico(previo + porMoneda[k], Motor.MONEDAS[k].dec) });
+          cambiosMonto.push({ moneda: k, delta: Motor.aCanonico(porMoneda[k], Motor.MONEDAS[k].dec) });
         });
         resumenMonto = difs.join(" · ");
         if (!cambiosMonto.length && !st.nota.trim()) { UI.toast("Ingresá el monto real o contá qué pasó", "bad"); return; }
@@ -5001,12 +5129,11 @@ var R = (function () {
       // sobre un cálculo que todavía cuenta el monto planificado como pendiente, y mostraría un
       // efectivo incorrecto hasta que se deslizara para completar por separado.
       var completarAca = st.motivo === "Monto no coincide" && !st.fallida && p.estado !== "completada";
+      var ajustes = {}; cambiosMonto.forEach(function (c) { ajustes[c.moneda] = c.delta; });
       await UI.conCarga(btn, async function () {
         try {
-          if (st.fallida) { await Datos.marcarParada(p.id, "fallida", st.motivo + (notaFinal ? ": " + notaFinal : "")); }
-          else if (completarAca) { await Datos.marcarParada(p.id, "completada"); await Datos.reportarIncidente(p.id, st.motivo, notaFinal); }
-          else { await Datos.reportarIncidente(p.id, st.motivo, notaFinal); }
-          for (var j = 0; j < cambiosMonto.length; j++) { await Datos.ajustarEncima(v.id, cambiosMonto[j].moneda, cambiosMonto[j].delta); }
+          // Una sola llamada atómica: estado de la parada + incidente + ajuste de efectivo (resolver_parada).
+          await Datos.resolverParada(p.id, st.fallida ? "fallida" : completarAca ? "completada" : null, st.motivo, notaFinal, ajustes);
           var wa = S.config && S.config.admin_whatsapp;
           var txt = "⚠️ " + st.motivo + "\n" + S.perfil.nombre + " · parada " + p.orden + "\nCliente: " + p.cliente_nombre + "\n" + p.direccion + (notaFinal ? "\n\n" + notaFinal : "") + (st.fallida ? "\n\n❌ No se pudo completar" : "") + (S.pos ? "\n📍 https://maps.google.com/?q=" + S.pos.lat.toFixed(5) + "," + S.pos.lng.toFixed(5) : "");
           sh.cerrar();
@@ -5151,10 +5278,12 @@ var C = (function () {
     var inv = modoAdmin && typeof modoAdmin === "object" ? modoAdmin : null;
     var primerAdmin = modoAdmin === true;
     // Teléfono + PIN es lo normal (repartidores sin email). El primer administrador arranca con email.
-    var modo = primerAdmin ? "email" : (modoPedido || (inv ? "tel" : modoGuardado()));
+    // Un administrador entra siempre con email y contraseña (un PIN de 6 números no alcanza para ese acceso).
+    var invAdmin = !!(inv && inv.rol === "admin");
+    var modo = primerAdmin || invAdmin ? "email" : (modoPedido || (inv ? "tel" : modoGuardado()));
     var porTel = modo === "tel", alta = !!modoAdmin;
     var email = h("input.inp", { type: "email", autocomplete: "username", placeholder: "tu@email.com", required: true });
-    var clave = h("input.inp", { type: "password", autocomplete: alta ? "new-password" : "current-password", placeholder: alta ? "Mínimo 8 caracteres" : "••••••••", required: true });
+    var clave = h("input.inp", { type: "password", autocomplete: alta ? "new-password" : "current-password", placeholder: alta ? (primerAdmin || invAdmin ? "12 o más, con letras y números" : "Mínimo 8 caracteres") : "••••••••", required: true });
     var tel = h("input.inp", { type: "tel", inputmode: "tel", autocomplete: alta ? "tel-national" : "username", placeholder: "11 5555-5555", required: true });
     var pin = h("input.inp.mono", { type: "password", inputmode: "numeric", pattern: "[0-9]*", maxlength: "6", autocomplete: alta ? "new-password" : "current-password", placeholder: "6 números", required: true,
       oninput: function () { pin.value = pin.value.replace(/\D/g, "").slice(0, 6); } });
@@ -5169,7 +5298,8 @@ var C = (function () {
         if (!Datos.normTel(tel.value)) { err.textContent = "Revisá el teléfono: con código de área, sin 0 ni 15 (ej.: 11 5555-5555)."; return; }
         if (!/^\d{6}$/.test(pin.value)) { err.textContent = "El PIN es de 6 números."; return; }
         if (inv && !nombre.value.trim()) { err.textContent = "Falta tu nombre."; return; }
-      } else if (alta && clave.value.length < 8) { err.textContent = "La contraseña necesita al menos 8 caracteres."; return; }
+      } else if (alta && (primerAdmin || invAdmin) && !Datos.claveFuerte(clave.value)) { err.textContent = Datos.MSG_CLAVE_ADMIN; return; }
+      else if (alta && clave.value.length < 8) { err.textContent = "La contraseña necesita al menos 8 caracteres."; return; }
       await UI.conCarga(btn, async function () {
         try {
           if (porTel) {
@@ -5188,7 +5318,7 @@ var C = (function () {
     } },
       h("div.marca-f", { style: { alignItems: "center", gap: "10px", marginBottom: "18px" } }, h("div.logo", { style: { margin: 0 } }, UI.svgLogo()), h("b", { style: { fontSize: "17px", letterSpacing: "-.01em" } }, "Ruta")),
       h("h1", inv ? "Te invitaron a Ruta" : primerAdmin ? "Configurá tu cuenta" : "Bienvenido"),
-      h("p.sub", inv ? "Vas a entrar como " + (ROL_TXT[inv.rol] || inv.rol) + ". " + (porTel ? "Solo tu nombre, tu teléfono y un PIN de 6 números que elijas. No hace falta email." : "Creá tu cuenta con tu email y una contraseña que elijas.")
+      h("p.sub", inv ? "Vas a entrar como " + (ROL_TXT[inv.rol] || inv.rol) + ". " + (porTel ? "Solo tu nombre, tu teléfono y un PIN de 6 números que elijas. No hace falta email." : invAdmin ? "Como administrador entrás con email y una contraseña fuerte (12 o más, con letras y números)." : "Creá tu cuenta con tu email y una contraseña que elijas.")
         : primerAdmin ? "Es el primer ingreso, así que esta cuenta arranca como administradora. Después podés sumar al resto del equipo y pasarle la administración a quien corresponda."
         : porTel ? "Entrá con tu teléfono y tu PIN." : "Entrá con el email y la contraseña que te dieron."),
       aviso ? h("div.nota", { style: { marginBottom: "14px" } }, ic("info", "sm"), h("div", h("span", aviso))) : null,
@@ -5198,7 +5328,7 @@ var C = (function () {
       porTel ? h("div.campo", h("label", inv ? "Elegí un PIN" : "PIN"), h("div.inp-ico", { style: { position: "relative" } }, ic("candado", "sm"), pin, ver), inv ? h("div.ayuda", "6 números que te acuerdes. Con esto vas a entrar siempre.") : null)
         : h("div.campo", h("label", "Contraseña"), h("div.inp-ico", { style: { position: "relative" } }, ic("candado", "sm"), clave, ver)),
       err, btn,
-      !primerAdmin ? h("button.btn.ghost.block", { type: "button", onclick: function () { pantallaLogin(modoAdmin, aviso, porTel ? "email" : "tel"); } },
+      !primerAdmin && !invAdmin ? h("button.btn.ghost.block", { type: "button", onclick: function () { pantallaLogin(modoAdmin, aviso, porTel ? "email" : "tel"); } },
         porTel ? (inv ? "Prefiero usar email" : "Entrar con email") : (inv ? "Registrarme con mi teléfono" : "Entrar con teléfono")) : null,
       inv ? h("button.btn.ghost.block", { type: "button", onclick: function () { olvidarInvitacion(); pantallaLogin(false); } }, "Ya tengo cuenta: entrar") : null,
       h("div.ayuda", { style: { display: "flex", alignItems: "center", gap: "8px", marginTop: "6px" } }, ic("escudo", "sm"), "Acceso privado. Cada persona ve solo lo que le corresponde."));
