@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Ruta">
 <meta name="robots" content="noindex,nofollow">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-8ktPchsF4YXmNNWcLOu9xLQmnL1VrU2Q/P8PZcZNVCk=' https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://tiles.openfreemap.org; worker-src blob:; child-src blob:; connect-src 'self' https://hgwnclqscytyozqkccro.supabase.co wss://hgwnclqscytyozqkccro.supabase.co https://tiles.openfreemap.org https://dolarapi.com https://api.bluelytics.com.ar https://photon.komoot.io https://router.project-osrm.org https://servicios.usig.buenosaires.gob.ar https://apis.datos.gob.ar https://nominatim.openstreetmap.org; base-uri 'none'; form-action 'self'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-5Oscrxp3l769+JfDWh9CENENQP9P92rt0gQRAXbt5Pc=' https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://tiles.openfreemap.org; worker-src blob:; child-src blob:; connect-src 'self' https://hgwnclqscytyozqkccro.supabase.co wss://hgwnclqscytyozqkccro.supabase.co https://tiles.openfreemap.org https://dolarapi.com https://api.bluelytics.com.ar https://photon.komoot.io https://router.project-osrm.org https://servicios.usig.buenosaires.gob.ar https://apis.datos.gob.ar https://nominatim.openstreetmap.org; base-uri 'none'; form-action 'self'; object-src 'none'">
 <meta name="description" content="Logística de traslados: rutas, repartidores y seguimiento en vivo.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icono.svg" type="image/svg+xml">
@@ -239,13 +239,33 @@ select.inp{appearance:none;padding-right:34px;background-image:url("data:image/s
 .pin-vivo::before,.pin-vivo::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:3px solid var(--c);animation:onda2 2s infinite}
 .pin-vivo::after{animation-delay:1s}
 @keyframes onda2{0%{transform:scale(1);opacity:.8}100%{transform:scale(2.2);opacity:0}}
-.pin-vivo.sin-senal{filter:grayscale(.55);opacity:.85}
-.pin-vivo.sin-senal::before{animation:none;opacity:0}
-.pin-vivo.sin-senal::after{inset:auto;right:-4px;top:-4px;width:13px;height:13px;border:2px solid #fff;background:var(--warn);box-shadow:0 0 0 2px var(--panel);animation:none;opacity:1}
+.pin-vivo-w{display:flex;flex-direction:column;align-items:center;gap:3px}
+.pin-gps{font:600 10.5px var(--font);color:var(--ink);background:var(--panel);padding:2px 7px;border-radius:999px;border:1px solid var(--line);white-space:nowrap;box-shadow:0 4px 12px -4px rgba(0,0,0,.5)}
+.pin-gps:empty{display:none}
+.pin-vivo-w.sin-senal .pin-gps{color:#111;background:var(--warn);border-color:var(--warn)}
+.gps{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--muted);white-space:nowrap}
+.gps.warn{color:#111;background:var(--warn);padding:1px 8px;border-radius:999px;font-weight:600}
+.pin-vivo-w.sin-senal .pin-vivo{filter:grayscale(.55);opacity:.85}
+.pin-vivo-w.sin-senal .pin-vivo::before{animation:none;opacity:0}
+.pin-vivo-w.sin-senal .pin-vivo::after{inset:auto;right:-4px;top:-4px;width:13px;height:13px;border:2px solid #fff;background:var(--warn);box-shadow:0 0 0 2px var(--panel);animation:none;opacity:1}
 .pin-tramo{display:flex;align-items:center;gap:5px;padding:4px 9px 4px 7px;border-radius:999px;background:var(--panel);color:var(--warn);font:600 11px var(--font);white-space:nowrap;
   border:1px solid color-mix(in oklab,var(--warn) 45%,transparent);box-shadow:0 6px 18px -6px rgba(0,0,0,.5)}
-.rp-senal{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:8px;padding:8px 14px;background:color-mix(in oklab,var(--warn) 18%,var(--panel));color:var(--ink);font:500 12.5px var(--font);border-bottom:1px solid color-mix(in oklab,var(--warn) 40%,transparent)}
-.rp-senal>svg{color:var(--warn);flex:none}
+.rp-avisos{position:sticky;top:0;z-index:30}
+.rp-senal{display:flex;align-items:center;gap:8px;padding:8px 14px;background:color-mix(in oklab,var(--warn) 18%,var(--panel));color:var(--ink);font:500 12.5px var(--font);border-bottom:1px solid color-mix(in oklab,var(--warn) 40%,transparent)}
+.rp-senal>svg{color:var(--warn);flex:none} .rp-senal>span{flex:1} .rp-senal .btn{flex:none;height:26px;padding:0 8px;font-size:12px}
+/* guía del repartidor */
+.guia{position:fixed;inset:0;z-index:90;background:var(--bg);overflow:auto;-webkit-overflow-scrolling:touch}
+.guia-cab{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:12px;padding:calc(12px + env(safe-area-inset-top)) 16px 12px;background:color-mix(in oklab,var(--bg) 85%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.guia-cab b{display:block;font-size:16px} .guia-cab small{color:var(--muted);font-size:12.5px}
+.guia-cuerpo{max-width:640px;margin:0 auto;padding:14px 16px calc(24px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px}
+.guia-paso{position:relative;display:grid;grid-template-columns:120px 1fr;gap:14px;padding:16px 16px 16px 18px;border-radius:20px;background:var(--panel);border:1px solid var(--line)}
+.guia-paso.iphone{grid-template-columns:1fr}
+.guia-n{position:absolute;top:-10px;left:12px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:#fff;font:700 13px var(--font);box-shadow:0 0 0 3px var(--panel)}
+.guia-dib{width:120px;height:80px;fill:none;stroke:var(--ink);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;color:var(--ink)}
+.guia-dib .g-thin{stroke-width:1.4;opacity:.6} .guia-dib .g-ok{stroke:var(--ok)} .guia-dib .g-ok-fill{fill:var(--ok);stroke:none} .guia-dib .g-bad{stroke:var(--bad)} .guia-dib .g-fill{fill:var(--ink);stroke:none} .guia-dib .g-panel{fill:var(--panel)}
+.guia-tx h3{margin:0 0 6px;font-size:15.5px;letter-spacing:-.01em} .guia-tx ol{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:13.5px;line-height:1.5;color:var(--ink-2)} .guia-tx p{margin:0;font-size:13.5px;line-height:1.5;color:var(--ink-2)}
+.guia-tx .btn{margin-top:10px}
+@media(max-width:480px){.guia-paso{grid-template-columns:1fr}.guia-dib{width:100%;height:76px}}
 .pin-edit{width:26px;height:26px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(255,255,255,.95),0 10px 24px -6px var(--accent);cursor:grab}
 
 /* ---------- operación (vista mapa) ---------- */
@@ -1325,6 +1345,20 @@ var UI = (function () {
   function horaDe(ts) { if (!ts) { return "—"; } return new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: TZ }).format(new Date(ts)); }
   function dur(seg) { var m = Math.round(seg / 60); if (m < 60) { return m + " min"; } return Math.floor(m / 60) + " h " + String(m % 60).padStart(2, "0"); }
   function km(m) { return (m / 1000).toFixed(m < 10000 ? 1 : 0).replace(".", ",") + " km"; }
+  // Antigüedad de la última ubicación de un repartidor: texto + si ya pasó el umbral de "sin señal" (90 s).
+  var UMBRAL_SIN_SENAL = 90000;
+  function gps(u) {
+    if (!u || !u.en) { return { txt: "Sin GPS todavía", vieja: true }; }
+    var ms = Date.now() - new Date(u.en).getTime();
+    return { txt: "GPS " + hace(u.en), vieja: ms > UMBRAL_SIN_SENAL, ms: ms };
+  }
+  // Antigüedad de la última ubicación de un repartidor: texto + si ya pasó el umbral de "sin señal" (90 s).
+  var UMBRAL_SIN_SENAL = 90000;
+  function gps(u) {
+    if (!u || !u.en) { return { txt: "Sin GPS todavía", vieja: true }; }
+    var ms = Date.now() - new Date(u.en).getTime();
+    return { txt: "GPS " + hace(u.en), vieja: ms > UMBRAL_SIN_SENAL, ms: ms };
+  }
   function hace(ts) {
     var s = (Date.now() - new Date(ts).getTime()) / 1000;
     if (s < 45) { return "recién"; } if (s < 3600) { return "hace " + Math.round(s / 60) + " min"; }
@@ -1442,7 +1476,7 @@ var UI = (function () {
   }
 
   return { h: h, add: add, limpiar: limpiar, reemplazar: reemplazar, ic: ic, svgLogo: svgLogo, GM: GM, WZ: WZ, TZ: TZ,
-    hoyISO: hoyISO, sumarDias: sumarDias, fechaLarga: fechaLarga, fechaCorta: fechaCorta, fechaSub: fechaSub, hhmm: hhmm, horaDe: horaDe,
+    hoyISO: hoyISO, sumarDias: sumarDias, fechaLarga: fechaLarga, fechaCorta: fechaCorta, fechaSub: fechaSub, hhmm: hhmm, gps: gps, UMBRAL_SIN_SENAL: UMBRAL_SIN_SENAL, gps: gps, UMBRAL_SIN_SENAL: UMBRAL_SIN_SENAL, horaDe: horaDe,
     dur: dur, km: km, hace: hace, minDeHora: minDeHora, epochDe: epochDe, segDelDia: segDelDia, ahoraSeg: ahoraSeg, proyeccion: proyeccion, atraso: atraso, iniciales: iniciales,
     norm: norm, resaltar: resaltar, debounce: debounce, toast: toast, drawer: drawer, modal: modal, sheet: sheet, confirmar: confirmar,
     popover: popover, conCarga: conCarga, mensajeError: mensajeError, celebrar: celebrar, contar: contar };
@@ -1885,6 +1919,19 @@ var Datos = (function () {
   async function resolverParada(id, estado, motivo, nota, ajustes) { return chk(await sb.rpc("resolver_parada", { p_id: id, p_estado: estado || null, p_motivo: motivo, p_nota: nota || null, p_ajustes: ajustes || {} })); }
   async function marcarParada(id, estado, nota) { return chk(await sb.rpc("marcar_parada", { p_id: id, p_estado: estado, p_nota: nota || null })); }
   async function reportarIncidente(parada, motivo, nota) { return chk(await sb.rpc("reportar_incidente", { p_parada: parada, p_motivo: motivo, p_nota: nota || null })); }
+  // ¿Hay internet de verdad? (navigator.onLine miente con WiFi sin salida). Consulta liviana al servidor, 4 s máximo.
+  // Sitio privado (Cloudflare Pages + llave): el servidor devuelve el link de acceso completo solo si ya tenés la cookie.
+  var llaveCache;
+  async function llaveAcceso() {
+    if (llaveCache !== undefined) { return llaveCache; }
+    try { var r = await fetch(location.origin + "/__llave", { cache: "no-store" }); llaveCache = r.ok ? (await r.json()).link || null : null; } catch (e) { llaveCache = null; }
+    return llaveCache;
+  }
+  async function hayInternet() {
+    if (!navigator.onLine) { return false; }
+    try { var c = new AbortController(); var t = setTimeout(function () { c.abort(); }, 4000); var r = await fetch(CFG.url + "/auth/v1/health", { cache: "no-store", signal: c.signal }); clearTimeout(t); return r.ok; }
+    catch (e) { return false; }
+  }
   async function reportarUbicacion(lat, lng, prec) { return chk(await sb.rpc("reportar_ubicacion", { p_lat: lat, p_lng: lng, p_prec: prec || null })); }
   // Lote de puntos [{lat,lng,prec,en,sin_senal}]: los que se guardaron sin conexión van con sin_senal=true y su hora real.
   async function reportarUbicaciones(puntos) { return chk(await sb.rpc("reportar_ubicaciones", { p_puntos: puntos })); }
@@ -1994,7 +2041,7 @@ var Datos = (function () {
     auditoria: auditoria, crearRepartidor: crearRepartidor, cambiarClave: cambiarClave,
     planillas: planillas, guardarPlanilla: guardarPlanilla, borrarPlanilla: borrarPlanilla,
     verInvitacion: verInvitacion, normTel: normTel, claveFuerte: claveFuerte, MSG_CLAVE_ADMIN: MSG_CLAVE_ADMIN, entrarTel: entrarTel, registrarTel: registrarTel, cuentaTel: cuentaTel, crearInvitacion: crearInvitacion, invitaciones: invitaciones, borrarInvitacion: borrarInvitacion,
-    misViajes: misViajes, iniciarViaje: iniciarViaje, finalizarViaje: finalizarViaje, finalizarViajeForzado: finalizarViajeForzado, ajustarEncima: ajustarEncima, resolverParada: resolverParada, marcarParada: marcarParada, reportarIncidente: reportarIncidente, reportarUbicacion: reportarUbicacion, reportarUbicaciones: reportarUbicaciones, historialSinSenal: historialSinSenal, colaUbic: colaUbic,
+    misViajes: misViajes, iniciarViaje: iniciarViaje, finalizarViaje: finalizarViaje, finalizarViajeForzado: finalizarViajeForzado, ajustarEncima: ajustarEncima, resolverParada: resolverParada, marcarParada: marcarParada, reportarIncidente: reportarIncidente, hayInternet: hayInternet, llaveAcceso: llaveAcceso, reportarUbicacion: reportarUbicacion, reportarUbicaciones: reportarUbicaciones, historialSinSenal: historialSinSenal, colaUbic: colaUbic,
     escuchar: escuchar, cotizaciones: cotizaciones, cotizacionGuardada: cotizacionGuardada, buscarDireccion: buscarDireccion, direccionDe: direccionDe,
     coordsDeTexto: coordsDeTexto, matriz: matriz, geometria: geometria, usuario: function () { return yo; }
   };
@@ -2137,18 +2184,19 @@ var Mapa = (function () {
       } else { api.baseM.setLngLat([b.lng, b.lat]); }
     };
     api.vivosSet = function (lista) {
-      var ok = {}, UMBRAL_SIN_SENAL = 90000;
+      var ok = {};
       (lista || []).forEach(function (v) {
         ok[v.id] = 1; var m = api.vivos[v.id];
         if (!m) {
-          var el4 = h("div.pin-vivo", { title: v.nombre }, UI.iniciales(v.nombre));
+          var el4 = h("div.pin-vivo-w", { title: v.nombre }, h("div.pin-vivo", UI.iniciales(v.nombre)), h("span.pin-gps"));
           m = new maplibregl.Marker({ element: el4 }).setLngLat([v.lng, v.lat]).addTo(map); api.vivos[v.id] = m;
         } else { m.setLngLat([v.lng, v.lat]); }
-        var vieja = v.en && (Date.now() - new Date(v.en).getTime()) > UMBRAL_SIN_SENAL;
+        var g = UI.gps(v), vieja = !!v.en && g.vieja;
         var elm = m.getElement();
         elm.style.setProperty("--c", v.color);
-        elm.classList.toggle("sin-senal", !!vieja);
-        elm.title = v.nombre + (vieja ? " · sin señal, última ubicación " + UI.hace(v.en) : "");
+        elm.classList.toggle("sin-senal", vieja);
+        elm.querySelector(".pin-gps").textContent = v.en ? g.txt.replace("GPS ", "") : "";
+        elm.title = v.nombre + (vieja ? " · sin señal, última ubicación " + UI.hace(v.en) : v.en ? " · " + g.txt : "");
       });
       Object.keys(api.vivos).forEach(function (id) { if (!ok[id]) { api.vivos[id].remove(); delete api.vivos[id]; } });
     };
@@ -2759,12 +2807,15 @@ var A = (function () {
         var cur = ps.find(function (p) { return p.estado === "en_camino" || p.estado === "asignada"; });
         var carga = A.cargaViaje(v), pct = Math.min(100, Motor.aNumero(carga.usd) / A.topeNum() * 100), excede = carga.usd > Motor.dec(A.tope());
         var est = v.estado === "en_curso" ? h("span.pill.acc.vivo", h("span.dot"), "En curso") : v.estado === "finalizado" ? h("span.pill.ok", h("span.dot"), "Finalizado") : h("span.pill.info", h("span.dot"), "Por salir");
+        // hace cuánto mandó la última ubicación (amarillo pasados los 90 s, igual que "sin señal")
+        var ug = v.estado === "en_curso" ? UI.gps(S.ubic.find(function (x) { return x.repartidor_id === v.repartidor_id; })) : null;
+        var gpsEl = ug ? h("span.gps" + (ug.vieja ? ".warn" : ""), ic(ug.vieja ? "sinSenal" : "pin", "sm"), ug.txt) : null;
         var sel = S.selViaje === v.id, pr = v.estado !== "finalizado" ? A.proy(v) : null;
         var finV = pr && pr.fin != null ? pr.fin : v.metricas && v.metricas.fin, dif = pr ? UI.atraso(pr.atrasoFin) : "";
         var card = h("article.viaje" + (sel ? ".sel" : ""), { style: { "--c": rep.color }, onclick: function () { S.selViaje = sel ? null : v.id; pintarViajes(); pintarMapa(true); } },
           h("div.viaje-h", h("span.av", { style: { "--c": rep.color } }, UI.iniciales(rep.nombre)),
             h("div.n", h("b", rep.nombre), h("span", hechas + " de " + ps.length + " paradas" + (finV ? " · fin " + UI.hhmm(finV) : ""),
-              dif ? h("b", { style: { color: pr.atrasoFin > 0 ? "var(--warn)" : "var(--ok)", fontWeight: 600 } }, " " + dif) : null)), est),
+              dif ? h("b", { style: { color: pr.atrasoFin > 0 ? "var(--warn)" : "var(--ok)", fontWeight: 600 } }, " " + dif) : null)), h("div", { style: { display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" } }, est, gpsEl)),
           h("div.segs", ps.map(function (p) { return h("i", { class: p.estado === "completada" ? "ok" : p.estado === "fallida" ? "bad" : p === cur && v.estado === "en_curso" ? "cur" : "" }); })),
           h("div.carga", h("span", carga.salida ? "Sale con" : "Lleva", carga.ajustado ? h("span", { title: "Corregido a mano por " + rep.nombre.split(" ")[0], style: { marginLeft: "5px", color: "var(--accent-2)" } }, ic("editar", "sm")) : null),
             h("div.med" + (excede ? ".bad" : ""), h("i", { style: { width: pct + "%" } })),
@@ -2916,7 +2967,7 @@ var A = (function () {
         S.viajes.forEach(function (v) {
           if (v.estado !== "en_curso") { return; }
           var u = S.ubic.find(function (x) { return x.repartidor_id === v.repartidor_id; });
-          var vieja = !u || (Date.now() - new Date(u.en).getTime()) > 90000;
+          var vieja = UI.gps(u).vieja;
           if (!vieja) { return; }
           var rep = A.repDe(v.repartidor_id) || {};
           alertas.appendChild(h("div.alerta.warn.glass", ic("sinSenal"), h("div.t", h("b", (rep.nombre || "Un repartidor") + " sin señal"),
@@ -3017,7 +3068,8 @@ var A = (function () {
     function actualizar() { pintarKPIs(); pintarViajes(); pintarAlertas(); pintarGraf(); if (S.cargado) { pintarMapa(false); } }
     actualizar();
     // cada 30 s se recalculan las horas estimadas con lo que va pasando
-    var t = setInterval(function () { if (!S.cargado) { return; } pintarKPIs(); pintarViajes(); pintarAlertas(); pintarMapa(false); }, 30000);
+    // cada 15 s: horas estimadas y "GPS hace X min" (pines, tarjetas y alertas) sin recargar datos
+    var t = setInterval(function () { if (!S.cargado || document.hidden) { return; } pintarKPIs(); pintarViajes(); pintarAlertas(); pintarMapa(false); }, 15000);
     return { actualizar: actualizar, salir: function () { clearInterval(t); mapa.destruir(); }, retema: function () { mapa.retema(); } };
   };
 })();
@@ -3860,9 +3912,11 @@ var A = (function () {
   };
   A.nuevoRepartidor = function () { A.nuevaPersona("repartidor"); };
 
-  function linkInvitacion(i) { return location.origin + location.pathname + "?inv=" + i.codigo; }
-  function mostrarLink(i) {
-    var link = linkInvitacion(i), rol = ROLES[i.rol] || ROLES.repartidor;
+  // Si el sitio es privado (llave de Cloudflare), el link de invitación la incluye: un solo toque y ya entra.
+  function linkInvitacion(i, llave) { return (llave ? llave + "&" : location.origin + location.pathname + "?") + "inv=" + i.codigo; }
+  async function mostrarLink(i) {
+    var llave = await Datos.llaveAcceso();
+    var link = linkInvitacion(i, llave), rol = ROLES[i.rol] || ROLES.repartidor;
     var esAdmin = i.rol === "admin";
     var txt = "Hola" + (i.nombre ? " " + i.nombre.split(" ")[0] : "") + "! Te invito a Ruta como " + rol.t.toLowerCase() + ". Entrá a este link y registrate " + (esAdmin ? "con tu email y una contraseña" : "con tu teléfono y un PIN (no hace falta email)") + ". Sirve una sola vez: " + link;
     var inp = h("input.inp.mono", { value: link, readonly: true, onfocus: function (e) { e.target.select(); } });
@@ -3871,6 +3925,20 @@ var A = (function () {
       h("div", { style: { display: "flex", gap: "8px", marginTop: "14px" } }, inp,
         h("button.btn", { type: "button", onclick: async function () { try { await navigator.clipboard.writeText(link); UI.toast("Link copiado"); } catch (e) { inp.select(); document.execCommand("copy"); UI.toast("Link copiado"); } } }, ic("copiar", "sm"), "Copiar")),
       h("a.btn.pri.lg.block", { href: "https://wa.me/?text=" + encodeURIComponent(txt), target: "_blank", rel: "noopener", style: { marginTop: "12px", background: "#25D366", color: "#052e16", boxShadow: "none" } }, ic("wa", "sm"), "Mandar por WhatsApp")),
+      h("div.mp", h("button.btn.ghost", { onclick: function () { m.cerrar(); } }, "Listo"))]);
+  }
+  // Link de acceso al sitio privado para alguien que YA tiene cuenta (cambió de celular, borró datos, etc.).
+  async function mandarAcceso(r) {
+    var llave = await Datos.llaveAcceso();
+    if (!llave) { UI.toast("Este sitio no usa llave de acceso: alcanza con la dirección de la app.", "info", 6000); return; }
+    var txt = "Hola " + r.nombre.split(" ")[0] + "! Este es tu link de acceso a Ruta. Abrilo desde el celular una vez y después entrá con tu " + (r.rol === "consulta" ? "email y contraseña" : "teléfono y PIN") + ": " + llave;
+    var inp = h("input.inp.mono", { value: llave, readonly: true, onfocus: function (e) { e.target.select(); } });
+    var wa = "https://wa.me/" + (r.telefono ? "549" + String(r.telefono).replace(/\D/g, "") : "") + "?text=" + encodeURIComponent(txt);
+    var m = UI.modal([h("div.mb", h("h3", "Link de acceso para " + r.nombre),
+      h("p", "Sirve para instalar la llave del sitio en un celular nuevo (o después de borrar datos). No cambia su cuenta: sigue entrando con lo de siempre. No lo publiques: con este link cualquiera ve la pantalla de ingreso."),
+      h("div", { style: { display: "flex", gap: "8px", marginTop: "14px" } }, inp,
+        h("button.btn", { type: "button", onclick: async function () { try { await navigator.clipboard.writeText(llave); UI.toast("Link copiado"); } catch (e) { inp.select(); document.execCommand("copy"); UI.toast("Link copiado"); } } }, ic("copiar", "sm"), "Copiar")),
+      h("a.btn.pri.lg.block", { href: wa, target: "_blank", rel: "noopener", style: { marginTop: "12px", background: "#25D366", color: "#052e16", boxShadow: "none" } }, ic("wa", "sm"), "Mandar por WhatsApp" + (r.telefono ? " a " + r.nombre.split(" ")[0] : ""))),
       h("div.mp", h("button.btn.ghost", { onclick: function () { m.cerrar(); } }, "Listo"))]);
   }
   A.invitar = function (rolInicial) {
@@ -3972,7 +4040,8 @@ var A = (function () {
           h("div", { style: { flex: 1, minWidth: 0 } },
             h("b", { style: { fontSize: "15px", display: "flex", alignItems: "center", gap: "8px" } }, h("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, r.nombre), soyYo(r) ? h("span.pill", "Vos") : null),
             h("div", { style: { fontSize: "12.5px", color: "var(--muted)", display: "flex", alignItems: "center", gap: "6px", marginTop: "5px", flexWrap: "wrap" } },
-              estado, r.activo && !esAdmin && enCurso && u ? h("span", "GPS " + UI.hace(u.en)) : null)),
+              estado, r.activo && !esAdmin && enCurso ? (function () { var g = UI.gps(u); return h("span.gps" + (g.vieja ? ".warn" : ""), ic(g.vieja ? "sinSenal" : "pin", "sm"), g.txt); })() : null)),
+          !esAdmin && r.activo ? h("button.btn.ghost.icon.sm", { "aria-label": "Mandar link de acceso a " + r.nombre, title: "Mandar link de acceso (si cambió de celular o borró los datos)", onclick: function () { mandarAcceso(r); } }, ic("wa", "sm")) : null,
           h("button.btn.ghost.icon.sm", { "aria-label": "Editar a " + r.nombre, onclick: function () { editarPersona(r); } }, ic("editar", "sm"))),
         ef ? h("div.resumen-eq", { style: { margin: "12px 0 0" } }, h("span", ic("dolar", "sm"), "Tiene encima"), h("b", efTxt || "Nada")) : null,
         esCons
@@ -4014,7 +4083,9 @@ var A = (function () {
       });
     }
     pintar();
-    return { actualizar: pintar };
+    // "GPS hace X min" se refresca solo cada 20 s (amarillo pasados los 90 s)
+    var relojGps = setInterval(function () { if (!document.hidden && S.vista === "equipo") { pintar(); } }, 20000);
+    return { actualizar: pintar, salir: function () { clearInterval(relojGps); } };
   };
 
   /* ---------------- Ajustes ---------------- */
@@ -4181,6 +4252,90 @@ var A = (function () {
 
 ;
 /* =====================================================================
+   GUÍA DEL REPARTIDOR — pantalla con los pasos para dejar el celular listo
+   (Android). Se muestra la primera vez que entra y queda en el botón "Ayuda".
+   También detecta qué le falta: ubicación apagada, permiso, internet.
+   ===================================================================== */
+var Guia = (function () {
+  "use strict";
+  var h = UI.h, ic = UI.ic;
+  var CLAVE = "ruta-guia-v1";
+  // La app instalable (APK) se sirve desde el mismo sitio que la web (privado, con la misma llave).
+  var APK = location.origin + location.pathname.replace(/[^/]*$/, "") + "ruta.apk";
+  function enApp() { return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()); }
+  function esAndroid() { return /android/i.test(navigator.userAgent); }
+  function esIphone() { return /iphone|ipad|ipod/i.test(navigator.userAgent); }
+
+  // Dibujos simples (trazo, color actual) para cada paso.
+  function svg(inner, vb) { var s = document.createElementNS("http://www.w3.org/2000/svg", "svg"); s.setAttribute("viewBox", vb || "0 0 120 80"); s.setAttribute("class", "guia-dib"); s.setAttribute("aria-hidden", "true"); s.innerHTML = inner; return s; }
+  var DIB = {
+    instalar: '<rect x="42" y="6" width="36" height="68" rx="7"/><path d="M60 22v26M50 40l10 10 10-10"/><path d="M52 66h16"/><rect x="8" y="30" width="26" height="14" rx="4" class="g-ok"/><path d="M13 37h10M13 41h7" class="g-thin"/><path d="m24.5 36.5 2.5 2.5 5-5" class="g-ok"/>',
+    ubicacion: '<path d="M60 70s-18-14-18-30a18 18 0 0 1 36 0c0 16-18 30-18 30z"/><circle cx="60" cy="40" r="6"/><rect x="88" y="30" width="26" height="14" rx="7"/><circle cx="107" cy="37" r="5" class="g-ok-fill"/><rect x="6" y="30" width="22" height="12" rx="3"/><rect x="28" y="33" width="3" height="6"/><rect x="9" y="33" width="10" height="6" class="g-ok-fill"/><path d="M17 50l-4 8h6l-3 8" class="g-ok"/>',
+    datos: '<rect x="18" y="14" width="34" height="46" rx="4"/><rect x="26" y="20" width="18" height="12" rx="2" class="g-thin"/><path d="M24 44h22M24 50h14" class="g-thin"/><rect x="68" y="14" width="34" height="46" rx="4"/><rect x="76" y="20" width="18" height="12" rx="2" class="g-thin"/><path d="M74 44h22M74 50h14" class="g-thin"/><path d="M52 37h16M62 31l6 6-6 6" class="g-ok"/><path d="M60 8v4M60 64v4" class="g-thin"/>',
+    ahorro: '<rect x="28" y="6" width="64" height="68" rx="8"/><rect x="38" y="16" width="44" height="26" rx="4"/><path d="M54 24l10 5-10 5z" class="g-fill"/><path d="M36 14l48 30" class="g-bad"/><rect x="40" y="52" width="26" height="12" rx="6"/><circle cx="47" cy="58" r="4" class="g-fill"/><path d="M72 58h12" class="g-thin"/>',
+    mapa: '<path d="M16 22l28-10 32 10 28-10v50l-28 10-32-10-28 10z"/><path d="M44 12v50M76 22v50" class="g-thin"/><circle cx="60" cy="40" r="14" class="g-panel"/><path d="M60 32v12M54 40l6 6 6-6" class="g-ok"/>'
+  };
+
+  var PASOS = [
+    { t: "Instalá la app de Ruta", d: "instalar", que: [
+      "Abrí el link de instalación que te mandó el administrador desde el celular.",
+      "Si el celular dice “no se pueden instalar apps desconocidas”, tocá Ajustes en ese mismo aviso y activá “Permitir de esta fuente” (para Chrome).",
+      "Volvé atrás, tocá Instalar y después Abrir. Entrás con tu teléfono y tu PIN."],
+      boton: function () { return !enApp() && esAndroid() ? h("a.btn.pri", { href: APK, download: "ruta.apk" }, ic("subir", "sm"), "Instalar la app") : null; } },
+    { t: "Ubicación: “Permitir todo el tiempo”", d: "ubicacion", que: [
+      "Cuando la app pida ubicación, elegí Permitir. Después andá a Ajustes → Aplicaciones → Ruta → Permisos → Ubicación → “Permitir todo el tiempo” y “Usar ubicación precisa”.",
+      "Sacá a Ruta del ahorro de batería: Ajustes → Aplicaciones → Ruta → Batería → “Sin restricciones” (en Xiaomi/Samsung también “Inicio automático” activado).",
+      "Con esto la app sigue mandando tu ubicación con la pantalla bloqueada y mientras usás Google Maps o Waze."] },
+    { t: "Datos móviles", d: "datos", que: [
+      "Necesitás un plan con datos móviles: sin datos el administrador no ve dónde estás y no podés marcar las paradas.",
+      "Recomendación: usar dos chips (dos empresas) y activar “Cambio automático de datos móviles” (Ajustes → Conexiones → Administrador de SIM). Si una se queda sin señal, el celular pasa a la otra solo.",
+      "La app gasta poco (unos 5–30 MB por día). Lo que gasta de verdad son los videos."] },
+    { t: "Que no se gasten los datos", d: "ahorro", que: [
+      "Desactivá los datos móviles de YouTube, Instagram, TikTok, Facebook y otras apps de videos: Ajustes → Aplicaciones → (la app) → Datos móviles → apagar “Datos móviles” y “Datos en segundo plano”.",
+      "Así esas apps solo funcionan con WiFi y los datos quedan para Ruta y el mapa."] },
+    { t: "Mapa sin conexión y navegación", d: "mapa", que: [
+      "En Google Maps: tu foto → “Mapas sin conexión” → “Seleccionar tu propio mapa” → marcá toda la zona de Buenos Aires → Descargar (hacelo con WiFi).",
+      "Para ir a cada parada usá el botón Google Maps de Ruta en vez de Waze: con el mapa descargado gasta muchos menos datos y funciona aunque se corte la señal."] }
+  ];
+
+  function pintar(pasosEl, alListo) {
+    return h("div.guia", { role: "dialog", "aria-label": "Guía para dejar el celular listo" },
+      h("div.guia-cab", h("div.logo", { style: { width: "34px", height: "34px", borderRadius: "10px", margin: 0 } }, UI.svgLogo()),
+        h("div", { style: { flex: 1 } }, h("b", "Dejá el celular listo"), h("small", "5 pasos, una sola vez. Después queda en el botón Ayuda.")),
+        h("button.btn.ghost.icon", { "aria-label": "Cerrar", onclick: alListo }, ic("x"))),
+      h("div.guia-cuerpo",
+        PASOS.map(function (p, i) {
+          return h("section.guia-paso", h("div.guia-n", String(i + 1)), svg(DIB[p.d]),
+            h("div.guia-tx", h("h3", p.t), h("ol", p.que.map(function (q) { return h("li", q); })), p.boton ? p.boton() : null));
+        }),
+        esIphone() ? h("section.guia-paso.iphone", h("div.guia-n", ic("info", "sm")), h("div.guia-tx", h("h3", "iPhone"), h("p", "Abrí Ruta en Safari, tocá Compartir → “Agregar a pantalla de inicio”. Funciona bien, pero el iPhone corta la ubicación cuando bloqueás la pantalla o cambiás de app: dejá Ruta abierta y la pantalla encendida mientras hacés el recorrido."))) : null,
+        h("button.btn.pri.xl.block", { style: { marginTop: "6px" }, onclick: alListo }, ic("check"), "Listo, ya lo hice")));
+  }
+  function mostrar(alCerrar) {
+    var el = pintar(null, function () { try { localStorage.setItem(CLAVE, "1"); } catch (e) {} el.remove(); if (alCerrar) { alCerrar(); } });
+    document.body.appendChild(el); el.scrollTop = 0;
+    return el;
+  }
+  function vista() { try { return localStorage.getItem(CLAVE) === "1"; } catch (e) { return true; } }
+
+  /* Qué le falta al celular ahora mismo. `geoError` es el código del último error de geolocalización
+     (1 = permiso denegado, 2 = ubicación apagada / sin posición). La comprobación "todo el tiempo"
+     solo se puede hacer desde la app instalada; en la web se recuerda el paso. */
+  async function problemas(geoError) {
+    var out = [];
+    if (!navigator.onLine) { out.push({ id: "internet", txt: "Sin internet: activá los datos móviles o conectate a WiFi.", paso: 3 }); }
+    var perm = null;
+    try { if (navigator.permissions && navigator.permissions.query) { perm = (await navigator.permissions.query({ name: "geolocation" })).state; } } catch (e) {}
+    if (perm === "denied" || geoError === 1) { out.push({ id: "permiso", txt: "Ruta no tiene permiso de ubicación: Ajustes → Aplicaciones → Ruta → Permisos → Ubicación → Permitir todo el tiempo.", paso: 2 }); }
+    else if (geoError === 2) { out.push({ id: "gps", txt: "La ubicación del celular está apagada: activala desde los accesos rápidos.", paso: 2 }); }
+    else if (perm === "prompt") { out.push({ id: "prompt", txt: "Todavía no diste permiso de ubicación: cuando la app lo pida, tocá Permitir.", paso: 2 }); }
+    return out;
+  }
+  return { mostrar: mostrar, vista: vista, problemas: problemas, APK: APK, enApp: enApp, PASOS: PASOS };
+})();
+
+;
+/* =====================================================================
    REPARTIDOR — celular. Una cosa por vez, botones grandes.
    ===================================================================== */
 var R = (function () {
@@ -4262,27 +4417,46 @@ var R = (function () {
       try { localStorage.setItem("ruta-tema", t); } catch (e) {} if (S.mapa) { S.mapa.retema(); } } }, ic("luna"));
     UI.reemplazar(raiz, h("div.rp",
       h("header.rp-top", h("span.av", { style: { "--c": perfil.color } }, UI.iniciales(perfil.nombre)),
-        h("div.t", h("b", "Hola, " + perfil.nombre.split(" ")[0]), h("small", UI.fechaSub(UI.hoyISO()))), tema,
+        h("div.t", h("b", "Hola, " + perfil.nombre.split(" ")[0]), h("small", UI.fechaSub(UI.hoyISO()))),
+        h("button.btn.ghost.icon", { "aria-label": "Ayuda", title: "Ayuda: dejar el celular listo", onclick: function () { Guia.mostrar(); } }, ic("info")), tema,
         h("button.btn.ghost.icon", { "aria-label": "Salir", onclick: async function () { if (await UI.confirmar("¿Cerrar sesión?", Datos.cuentaTel() ? "Para volver vas a necesitar tu teléfono y tu PIN." : "Para volver vas a necesitar tu email y contraseña.", { si: "Salir" })) { await Datos.salir(); location.reload(); } } }, ic("salir"))),
       mapaEl, cont));
     pintar();
     try { S.config = await Datos.config(); await cargar(); } catch (e) { UI.toast(UI.mensajeError(e), "bad"); S.cargado = true; }
     pintar();
     Datos.escuchar(["paradas", "viajes"], function () { recargar(); });
-    document.addEventListener("visibilitychange", function () { if (!document.hidden) { recargar(); pedirWake(); } });
+    document.addEventListener("visibilitychange", function () { if (!document.hidden) { recargar(); pedirWake(); pintarAvisos(); } });
+    window.addEventListener("online", pintarAvisos); window.addEventListener("offline", pintarAvisos);
+    pintarAvisos();
+    // La primera vez: la guía para dejar el celular listo (después queda en el botón Ayuda).
+    if (!Guia.vista()) { Guia.mostrar(); }
     setInterval(refrescarEtas, 30000);
   }
 
   /* ---------- ubicación y pantalla encendida durante el recorrido ---------- */
+  // Plugin nativo de la app Android (Capacitor): sigue con la pantalla bloqueada y con Maps/Waze abiertos.
+  function pluginGeo() { try { return window.Capacitor && window.Capacitor.isNativePlatform() ? window.Capacitor.Plugins.BackgroundGeolocation : null; } catch (e) { return null; } }
+  function alRecibirPos(lat, lng, prec) {
+    S.pos = { lat: lat, lng: lng, en: new Date().toISOString() }; S.posPrec = prec;
+    if (S.mapa) { S.mapa.vivosSet([{ id: "yo", lat: S.pos.lat, lng: S.pos.lng, color: S.perfil.color, nombre: S.perfil.nombre }]); }
+    if (Date.now() - S.ultEnvio > INTERVALO_UBIC) { enviarUbicacion(); }
+    if (S.geoError) { S.geoError = 0; pintarAvisos(); }
+  }
+  function alFallarPos(err) { if (err && err.code !== 3 && S.geoError !== err.code) { S.geoError = err.code; pintarAvisos(); } }
   function seguir(activo) {
-    if (!("geolocation" in navigator)) { return; }
+    var bg = pluginGeo();
+    if (!bg && !("geolocation" in navigator)) { return; }
     if (activo && S.geoId == null) {
-      S.geoId = navigator.geolocation.watchPosition(function (p) {
-        S.pos = { lat: p.coords.latitude, lng: p.coords.longitude, en: new Date().toISOString() };
-        S.posPrec = p.coords.accuracy;
-        if (S.mapa) { S.mapa.vivosSet([{ id: "yo", lat: S.pos.lat, lng: S.pos.lng, color: S.perfil.color, nombre: S.perfil.nombre }]); }
-        if (Date.now() - S.ultEnvio > INTERVALO_UBIC) { enviarUbicacion(); }
-      }, function () {}, { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 });
+      if (bg) {
+        S.geoId = "bg";
+        bg.addWatcher({ backgroundMessage: "Ruta está mandando tu ubicación al administrador.", backgroundTitle: "Recorrido en curso", requestPermissions: true, stale: false, distanceFilter: 15 },
+          function (loc, err) {
+            if (err) { if (err.code === "NOT_AUTHORIZED") { alFallarPos({ code: 1 }); bg.openSettings && bg.openSettings(); } else { alFallarPos({ code: 2 }); } return; }
+            if (loc) { alRecibirPos(loc.latitude, loc.longitude, loc.accuracy); }
+          }).then(function (id) { S.geoWatcher = id; });
+      } else {
+        S.geoId = navigator.geolocation.watchPosition(function (p) { alRecibirPos(p.coords.latitude, p.coords.longitude, p.coords.accuracy); }, alFallarPos, { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 });
+      }
       // Envío periódico aunque el celular esté quieto (watchPosition no dispara si no se mueve):
       // así el admin siempre tiene una posición fresca y, sin conexión, queda el rastro completo.
       S.timerUbic = setInterval(function () { if (S.pos && Date.now() - S.ultEnvio >= INTERVALO_UBIC - 500) { enviarUbicacion(); } }, INTERVALO_UBIC);
@@ -4292,7 +4466,10 @@ var R = (function () {
         window.addEventListener("online", S.alVolver);
       }
       enviarUbicacion();
-    } else if (!activo && S.geoId != null) { navigator.geolocation.clearWatch(S.geoId); S.geoId = null; clearInterval(S.timerUbic); }
+    } else if (!activo && S.geoId != null) {
+      if (S.geoId === "bg") { if (S.geoWatcher && pluginGeo()) { pluginGeo().removeWatcher({ id: S.geoWatcher }); } S.geoWatcher = null; } else { navigator.geolocation.clearWatch(S.geoId); }
+      S.geoId = null; clearInterval(S.timerUbic);
+    }
   }
   /* Manda la posición actual + todo lo que quedó en la cola local. Si no hay conexión (o falla),
      la posición se guarda en IndexedDB con su hora real y marcada "sin señal": nunca se pierde
@@ -4314,11 +4491,15 @@ var R = (function () {
     } finally { S.enviando = false; }
   }
   // Avisito discreto en la app del repartidor: "Sin conexión: guardando tu recorrido (N puntos)".
-  function pintarSenal() {
-    var el = document.querySelector(".rp-senal");
-    if (!S.sinSenal) { if (el) { el.remove(); } return; }
-    if (!el) { el = h("div.rp-senal", { role: "status" }, ic("sinSenal", "sm"), h("span")); (raiz || document.body).prepend(el); }
-    el.querySelector("span").textContent = "Sin conexión: tu recorrido se guarda en el celular y se manda al volver la señal" + (S.pendientes ? " (" + S.pendientes + ")" : "");
+  function pintarSenal() { pintarAvisos(); }
+  // Avisos arriba de todo: sin conexión, ubicación apagada o sin permiso. Cada uno lleva a la guía.
+  async function pintarAvisos() {
+    var lista = await Guia.problemas(S.geoError);
+    if (S.sinSenal && !lista.some(function (p) { return p.id === "internet"; })) { lista.unshift({ id: "cola", txt: "Sin conexión: tu recorrido se guarda en el celular y se manda al volver la señal" + (S.pendientes ? " (" + S.pendientes + ")" : "") + ".", paso: 3 }); }
+    var el = document.querySelector(".rp-avisos");
+    if (!lista.length) { if (el) { el.remove(); } return; }
+    if (!el) { el = h("div.rp-avisos", { role: "status" }); (raiz || document.body).prepend(el); }
+    UI.reemplazar(el, lista.map(function (p) { return h("div.rp-senal", { "data-aviso": p.id }, ic(p.id === "internet" || p.id === "cola" ? "sinSenal" : "pin", "sm"), h("span", p.txt), h("button.btn.sm.ghost", { onclick: function () { Guia.mostrar(); } }, "Ver cómo")); }));
   }
   async function pedirWake() {
     var v = viajeActual(); if (!v || v.estado !== "en_curso" || !("wakeLock" in navigator)) { return; }
@@ -4393,7 +4574,18 @@ var R = (function () {
     if (v.estado === "asignado") {
       cont.appendChild(h("div", { style: { margin: "14px 16px 0", display: "flex", flexDirection: "column", gap: "10px" } },
         h("button.btn.pri.xl.block", { onclick: function () { var b = this; UI.conCarga(b, async function () {
-          try { await Datos.iniciarViaje(v.id); await cargar(); var p1 = paradasDe(viajeActual())[0]; if (p1) { await Datos.marcarParada(p1.id, "en_camino").catch(function () {}); await cargar(); }
+          // Sin datos móviles no se puede arrancar (el servidor no se entera): se avisa y se registra el intento
+          // para que el admin vea "empezó sin conexión" cuando finalmente arranque.
+          if (!(await Datos.hayInternet())) {
+            S.inicioSinConexion = new Date();
+            var shSin = UI.sheet([h("div", { style: { textAlign: "center", padding: "6px 0" } }, h("div.ic", { style: { margin: "0 auto 10px" } }, ic("sinSenal", "lg")),
+              h("h3", { style: { margin: "0 0 6px", fontSize: "20px" } }, "No tenés datos móviles"),
+              h("p", { style: { margin: "0 0 14px", color: "var(--muted)" } }, "Activá los datos móviles o conectate a WiFi y volvé a tocar Iniciar. Mientras no haya conexión el administrador no ve dónde estás."),
+              h("button.btn.pri.lg.block", { onclick: function () { shSin.cerrar(); } }, "Entendido"))]);
+            return;
+          }
+          try { await Datos.iniciarViaje(v.id); await cargar();
+            if (S.inicioSinConexion) { var hs = UI.horaDe(S.inicioSinConexion.toISOString()); S.inicioSinConexion = null; Datos.reportarIncidente(null, "Empezó sin conexión", "Tocó Iniciar sin datos móviles a las " + hs + "; arrancó cuando volvió la conexión.").catch(function () {}); } var p1 = paradasDe(viajeActual())[0]; if (p1) { await Datos.marcarParada(p1.id, "en_camino").catch(function () {}); await cargar(); }
             pedirWake(); if (navigator.vibrate) { navigator.vibrate(20); } UI.toast("¡Recorrido iniciado! Buen viaje."); pintar(); } catch (e) { UI.toast(UI.mensajeError(e), "bad"); } }); } },
           ic("play"), "Iniciar recorrido"),
         linkRuta(ps)));
